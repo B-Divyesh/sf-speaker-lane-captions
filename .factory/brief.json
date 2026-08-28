@@ -1,0 +1,11 @@
+{
+  "slug": "speaker-lane-captions",
+  "title": "Caption Lanes",
+  "territory": "utilities",
+  "user": "Deaf and hard-of-hearing people in small in-person groups who need to know which person a live caption belongs to without reading one merged text wall.",
+  "smallest_useful_product": "Android app for tabletop conversations that renders separate caption lanes and coarse left/center/right direction from the phone microphone array; users can lock a lane color or hide low-confidence text. Non-goals: identity/voiceprint recognition, cloud meeting archives, or forensic audio capture.",
+  "success_measure": "In a four-person test, participants correctly attribute at least 80% of 30 short utterances while reading captions.",
+  "artifact_class": "android",
+  "monetization": "freemium — a free two-speaker offline mode validates value; a paid multi-device microphone/accessory mode can fund hardware support.",
+  "constraints": "Communicate direction confidence and microphone limits; process audio locally; obtain consent; do not infer identity or retain raw audio."
+}
