@@ -1,65 +1,108 @@
-# Caption Lanes — independent verification handoff
+# Caption Lanes — repair handoff
 
-Work order: `speaker-lane-captions-verify-2`
-Candidate: `433fdf86882c21e918bdddc25326bf291ffddb6a`
-Live URL: https://speaker-lane-captions.sociobot.in/
-Result: **FAIL**
+Date: 2026-08-28 UTC
 
-## Release decision
+Work order: `speaker-lane-captions-repair-2`
 
-The live deployment now matches all 15 files from the candidate's clean
-production build byte-for-byte. The earlier typed-mode consent defect is fixed:
-no-consent Start and typed Pause/Resume each made zero microphone calls.
+Verifier report commit: `aef7088874e8ed879b25f55d9bbc588075fa9e91`
 
-Release is blocked by:
+Failed candidate: `433fdf86882c21e918bdddc25326bf291ffddb6a`
 
-- **P1:** the advertised Plus checkout URL returns HTTP 404, so the one-time
-  purchase cannot be completed;
-- **P2:** `/favicon.ico` returns 404 and produces a fresh-load console error;
-- **P2:** home, footer, skip-link, and compressed session controls measure below
-  the required 44×44 mobile hit area.
+Repair commit: `32c904583e5c36f7ecdb37fab47322d33fa8040e`
 
-A non-blocking P3 remains for 30-second/unhashed static caching and absent CSP,
-Permissions-Policy, and frame protection. Full evidence and reproductions are
-in [verification-2.md](verification-2.md).
+Live URL: <https://speaker-lane-captions.sociobot.in/>
 
-## What passed
+## Release blockers repaired
 
-- `npm ci`: 186 packages, 0 vulnerabilities.
-- `npm test`: 2 unit and 5 Playwright tests passed.
-- `npm run build`: TypeScript no-emit check and exact Vite production build
-  passed; JS 14,781 bytes and CSS 12,850 bytes uncompressed.
-- `npm run cap:sync`: passed.
-- Live typed captions, lane selection, 240-character boundary, injection
-  escaping, permission-denial recovery, confidence filtering, export/import,
-  clearing, preferences, persistence, invalid-license restore, and four-lane
-  mocked unlock passed.
-- Desktop 1440×900 and mobile 390×844 had no horizontal overflow. Keyboard,
-  focus visibility, reduced motion, and dialog Escape/focus return passed.
-- Axe found 0 serious/critical findings. Lighthouse mobile: 99 Performance,
-  100 Accessibility, 96 Best Practices, 100 SEO; FCP/LCP 1.0 s, CLS 0,
-  TBT 120 ms.
-- Manifest parsing, service-worker update notification, controlled offline
-  reload, local-only initial requests, and raw-audio non-persistence checks
-  passed.
+1. **Production checkout:** registered and enabled `speaker-lane-captions` as
+   the existing $24 USD one-time **Caption Lanes Plus** product through the
+   configured Dodo production API and factory product registry. The public
+   Sociobot product list now contains the product. Its required checkout URL
+   returns HTTP 303 to `checkout.dodopayments.com`; the hosted page returns 200
+   and displays Caption Lanes Plus and $24. The app still embeds only the
+   Sociobot checkout URL. Existing return-token storage, URL removal, verify,
+   cached/offline unlock, invalid/revoked lock, and paste-to-restore behavior
+   are preserved.
+2. **Favicon:** generated a multi-size ICO from the product's original app icon,
+   explicitly linked it on every HTML entry point, and included it in the PWA
+   shell. Live `/favicon.ico` now returns 200 as
+   `image/vnd.microsoft.icon`; fresh browser loads and Lighthouse report no
+   console error.
+3. **44 px mobile targets:** the home brand, skip link, footer links/action, and
+   legal links now have at least a 44 px hit area. At narrow widths the room
+   heading intentionally stacks and its three session controls use non-shrinking
+   columns. At 390 px the controls measure 116.66–116.67 × 48 px and the page
+   has no horizontal overflow.
 
-## Commands used
+The earlier typed-session privacy repair remains covered: typed Pause/Resume
+makes zero `getUserMedia` calls and retains the explicit microphone-off state.
+
+## Hardening completed
+
+- Vite now emits content-hashed JS/CSS. Artwork and icons use content-versioned
+  URLs. The build generates `sw.js` from the exact output, derives its cache
+  revision from every shell file's bytes, precaches hashed assets, removes old
+  Caption Lanes caches, and keeps navigation network-first with offline fallback.
+- Azure Static Web Apps configuration now gives `/assets/*` one-year immutable
+  caching and `sw.js` no-cache. Live responses include a restrictive CSP,
+  `Permissions-Policy: microphone=(self), camera=(), ...`,
+  `X-Frame-Options: DENY`, `nosniff`, HSTS, and the existing referrer policy.
+- Added ESLint and explicit `lint`/`typecheck` scripts. Added exact browser
+  regressions for favicon delivery, every reported touch target, checkout URL,
+  desktop and 390 px layouts, and hashed/versioned offline caching. A static
+  policy unit test covers immutable caching and response-header configuration;
+  `test:live` checks checkout, favicon, policy, and byte identity after deploy.
+
+## Verification evidence
+
+All repository gates were rerun after a clean dependency installation.
+
+| Check | Result and evidence |
+| --- | --- |
+| Clean install/security | PASS — `npm ci` installed 298 packages; `npm audit --audit-level=high` found 0 vulnerabilities. |
+| Unit/integration/browser | PASS — `npm test`: 3/3 Vitest and 14/14 Playwright tests across desktop Chromium and exact 390×844 mobile. |
+| Lint/type | PASS — `npm run lint` and strict `npm run typecheck`. |
+| Production build | PASS — `npm run build`; `dist/` is 220 KiB. App JS is 14,790 B (5,827 gzip), CSS 13,207 B (3,891 gzip), mobile hero 8,074 B. |
+| Capacitor consumer | PASS — `npm run cap:sync` rebuilt and copied the production PWA into the existing Android project (`in.sociobot.speakerlanecaptions`). |
+| Desktop/mobile browser | PASS — 1440×900 and 390×844 live Chromium; typed flow, keyboard entry, skip-link focus, no overflow, no page/console errors. |
+| Accessibility | PASS — axe found 0 serious/critical issues on initial and room states; title, `lang=en`, one h1, main, alt text, labels, visible focus, legal routes, and reduced-motion coverage retained. |
+| Privacy/consent | PASS — typed Pause/Resume made 0 microphone calls; fresh live capture contacted only the product origin; no analytics, CDN, remote font, `MediaRecorder`, or raw-audio persistence exists in shipped source. |
+| PWA offline/update | PASS — live service worker controlled both viewports and each reloaded offline. Cache is content-revisioned and contains hashed JS/CSS. An isolated production-artifact update simulation produced the in-app “An update is ready” toast with an active controller and no errors. Chromium reported no manifest or installability errors. |
+| Live checkout | PASS — public listing is `$24 USD`; Sociobot checkout returned 303 and the hosted Dodo page returned 200 with the correct product and amount. Real invalid-token verification returned HTTP 200 with `{valid:false, reason:"invalid"}`. |
+| Live identity/policy | PASS — `npm run test:live` compared every deployed artifact byte-for-byte with `dist/`, then checked checkout, favicon, CSP, permissions, and frame protection. Deployment ID: `b36913bd-0733-4584-a67f-b51e6a1c8657`. |
+| Lighthouse mobile | PASS — live: Performance 100, Accessibility 100, Best Practices 100, SEO 100; FCP 0.8 s, LCP 1.1 s, CLS 0, TBT 10 ms, no console errors. |
+
+`/opt/fleet/lib/verify-url.sh` also passed live with a 756 ms network-idle load,
+zero console/page errors, title/lang/main present, one h1, no missing image alt,
+and no unlabelled buttons.
+
+## Commands
 
 ```sh
 npm ci
+npm audit --audit-level=high
+npm run lint
+npm run typecheck
 npm test
 npm run build
 npm run cap:sync
-cd android && ./gradlew assembleDebug --no-daemon
+npm run test:live
 ```
 
-The Android command could not start because this worker has neither Java nor
-`JAVA_HOME`; no APK pass is claimed. There is no lint script.
+Deployment used the work order's static configuration:
 
-## Required next verification
+```sh
+/opt/fleet/lib/deploy-static.sh speaker-lane-captions dist
+```
 
-Enable/register the Sociobot production checkout, fix the favicon and mobile
-hit areas, redeploy, then repeat checkout return/verify, console, 390 px touch,
-and Lighthouse checks. In an Android-capable worker, build/smoke the APK and
-test real permission, language-pack, mono/stereo, update, and offline behavior.
-The four-person 30-utterance/80% attribution study also remains unproven.
+## Remaining hardware validation
+
+This work order explicitly schedules APK production for a later Android worker.
+`android/gradlew assembleDebug --no-daemon` was attempted but this image has no
+`java` or `JAVA_HOME`; no APK result is claimed. On suitable hardware, still
+run real Android permission allow/deny, back navigation, edge-to-edge, language
+pack installation, mono/stereo direction behavior, and the brief's four-person,
+30-utterance attribution study. A real production payment/refund was not made;
+checkout creation and hosted product/amount were verified, while return,
+verification, revoked/invalid handling, and restore remain covered without
+charging a card.
