@@ -69,7 +69,7 @@ All repository gates were rerun after a clean dependency installation.
 | Privacy/consent | PASS — typed Pause/Resume made 0 microphone calls; fresh live capture contacted only the product origin; no analytics, CDN, remote font, `MediaRecorder`, or raw-audio persistence exists in shipped source. |
 | PWA offline/update | PASS — live service worker controlled both viewports and each reloaded offline. Cache is content-revisioned and contains hashed JS/CSS. An isolated production-artifact update simulation produced the in-app “An update is ready” toast with an active controller and no errors. Chromium reported no manifest or installability errors. |
 | Live checkout | PASS — public listing is `$24 USD`; Sociobot checkout returned 303 and the hosted Dodo page returned 200 with the correct product and amount. Real invalid-token verification returned HTTP 200 with `{valid:false, reason:"invalid"}`. |
-| Live identity/policy | PASS — `npm run test:live` compared every deployed artifact byte-for-byte with `dist/`, then checked checkout, favicon, CSP, permissions, and frame protection. Deployment ID: `b36913bd-0733-4584-a67f-b51e6a1c8657`. |
+| Live identity/policy | PASS — `npm run test:live` compared every deployed artifact byte-for-byte with `dist/`, then checked checkout, favicon, CSP, permissions, and frame protection. Final deployment ID: `135491b6-3ed8-4484-9645-6c13793cabc0`. |
 | Lighthouse mobile | PASS — live: Performance 100, Accessibility 100, Best Practices 100, SEO 100; FCP 0.8 s, LCP 1.1 s, CLS 0, TBT 10 ms, no console errors. |
 
 `/opt/fleet/lib/verify-url.sh` also passed live with a 756 ms network-idle load,
