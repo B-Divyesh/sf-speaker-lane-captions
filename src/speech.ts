@@ -23,7 +23,10 @@ interface RecognitionLike extends EventTarget {
   onend: (() => void) | null;
 }
 
-type RecognitionConstructor = new () => RecognitionLike;
+type RecognitionConstructor = (new () => RecognitionLike) & {
+  available?: (options: { langs: string[]; processLocally: boolean }) => Promise<'available' | 'downloadable' | 'downloading' | 'unavailable'>;
+  install?: (options: { langs: string[] }) => Promise<boolean>;
+};
 
 export class OnDeviceSpeech {
   private recognition: RecognitionLike | null = null;
@@ -39,20 +42,40 @@ export class OnDeviceSpeech {
     return Boolean(this.constructorForBrowser());
   }
 
-  start(): boolean {
+  async start(): Promise<boolean> {
     const Constructor = this.constructorForBrowser();
     if (!Constructor) return false;
-    this.wanted = true;
     const recognition = new Constructor();
-    recognition.continuous = true;
-    recognition.interimResults = false;
-    recognition.lang = navigator.language || 'en-US';
+    const language = navigator.language || 'en-US';
     // Chromium's on-device mode. If unsupported, do not silently opt into server speech.
     if (!('processLocally' in recognition)) {
       this.onError('This browser cannot guarantee on-device speech. Use typed captions or install the Android app on a supported device.');
       this.wanted = false;
       return false;
     }
+    if (Constructor.available) {
+      try {
+        const availability = await Constructor.available({ langs: [language], processLocally: true });
+        if (availability === 'unavailable') {
+          this.onError(`On-device captions are not available for ${language}. Use typed captions or change Android's speech language.`);
+          return false;
+        }
+        if (availability === 'downloadable' || availability === 'downloading') {
+          this.onState(false);
+          if (!Constructor.install || !await Constructor.install({ langs: [language] })) {
+            this.onError('The on-device language pack was not installed. Connect once, then start captions and accept the language download.');
+            return false;
+          }
+        }
+      } catch {
+        this.onError('The on-device language pack could not be checked. Use typed captions and try again after reconnecting.');
+        return false;
+      }
+    }
+    this.wanted = true;
+    recognition.continuous = true;
+    recognition.interimResults = false;
+    recognition.lang = language;
     recognition.processLocally = true;
     recognition.onresult = (event) => {
       for (let index = event.resultIndex; index < event.results.length; index += 1) {

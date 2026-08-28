@@ -6,6 +6,8 @@ test.beforeEach(async ({ page }) => {
 });
 
 test('runs the typed directional caption flow and passes axe', async ({ page }) => {
+  const consoleErrors: string[] = [];
+  page.on('console', (message) => { if (message.type() === 'error') consoleErrors.push(message.text()); });
   await page.goto('/');
   await expect(page).toHaveTitle(/Caption Lanes/);
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Know where every caption came from.');
@@ -21,6 +23,7 @@ test('runs the typed directional caption flow and passes axe', async ({ page }) 
   await page.getByLabel(/Type a caption/).fill('Thank you.');
   await page.keyboard.press('Enter');
   await expect(page.locator('.lane[data-id="right"]')).toContainText('Thank you.');
+  expect(consoleErrors).toEqual([]);
 });
 
 test('works at 390px and restores local captions', async ({ page }) => {

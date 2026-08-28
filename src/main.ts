@@ -154,8 +154,8 @@ async function startRoom(practice = false): Promise<void> {
     showMicError('On-device speech is not available in this browser. Use typed captions, or open the Android build on a supported device.');
     return;
   }
+  await speech.start();
   await startDirectionAudio();
-  speech.start();
 }
 
 async function startDirectionAudio(): Promise<void> {
@@ -228,7 +228,7 @@ function bindEvents(): void {
   $('#pauseButton').addEventListener('click', () => {
     paused = !paused; const button = $('#pauseButton');
     if (paused) { stopAudio(); button.innerHTML = '<span aria-hidden="true">▶</span> Resume'; }
-    else { button.innerHTML = '<span aria-hidden="true">Ⅱ</span> Pause'; void startDirectionAudio().then(() => speech.start()); }
+    else { button.innerHTML = '<span aria-hidden="true">Ⅱ</span> Pause'; void speech.start().then(() => startDirectionAudio()); }
   });
   $('#endButton').addEventListener('click', () => { stopAudio(); paused = false; $('#room').hidden = true; $('#welcome').hidden = false; $('#welcome').scrollIntoView(); });
   $('#exportButton').addEventListener('click', exportTranscript);
