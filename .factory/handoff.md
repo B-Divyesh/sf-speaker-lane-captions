@@ -4,7 +4,7 @@ Work order: `speaker-lane-captions-repair-1`
 
 Base verifier report: `4b3d09ad8a7b30fe98ca4a27fddb547791c11c67`
 
-Repaired candidate: recorded by the repair commit accompanying this handoff
+Repair commit: `2e581beb3271f4dfae4b6ee2cad2c8f70865323e`
 
 ## Release-blocking repair
 
@@ -38,7 +38,7 @@ All commands were run from a fresh dependency installation:
 | Accessibility | PASS | Playwright axe found no serious/critical violations on the app, privacy, and terms routes; existing title, `lang`, single `h1`, `main`, labels, focus treatment, and reduced-motion coverage remain intact. |
 | Lighthouse mobile | PASS | Local production preview: Performance 100, Accessibility 100, Best Practices 96, SEO 100; FCP 1.0s, LCP 1.0s, CLS 0, TBT 20ms. Lighthouse wrote its report but its browser target crashed only during final screenshot/BFCache artifact collection; the scores and separate Playwright no-error smoke result are retained. |
 | Privacy/offline/PWA | PASS | Existing Playwright test controlled the service worker, set the context offline, reloaded, and rendered the app shell. Typed-mode regression observed no `getUserMedia` calls. The manifest remains standalone with a versioned start URL and 192/512 maskable icons. |
-| Response/live identity (pre-push) | PASS / pending deploy | Before push, `https://speaker-lane-captions.sociobot.in/` still matched the unrepaired candidate's `dist/index.html` SHA-256 (`4a00ca…`). Its HTTPS/HSTS/nosniff/referrer policy were observed. Recheck the live asset hash and the new P1 sequence after static deployment completes. |
+| Response/live identity (post-push) | Remote PASS / host pending | `main` was pushed at repair commit `2e581be`. At 2026-08-28 03:20 UTC, `https://speaker-lane-captions.sociobot.in/` was still serving the prior app bundle (`9851b8…`, versus rebuilt local `49357d…`), so a live P1 recheck must wait for static-host propagation. Its HTTPS/HSTS/nosniff/referrer policy were observed. |
 | Android debug APK | NOT RUNNABLE IN THIS WORKER | `android/gradlew assembleDebug --no-daemon` cannot start: `java` and `JAVA_HOME` are absent. Capacitor sync is passing; build/smoke the APK in a JDK/Android-SDK-capable worker. |
 
 There is no configured lint script in this project; TypeScript's no-emit check
