@@ -9,6 +9,9 @@ test('runs the typed directional caption flow and passes axe', async ({ page }) 
   const consoleErrors: string[] = [];
   page.on('console', (message) => { if (message.type() === 'error') consoleErrors.push(message.text()); });
   await page.goto('/');
+  const favicon = await page.request.get('/favicon.ico');
+  expect(favicon.status()).toBe(200);
+  expect(favicon.headers()['content-type']).toMatch(/^image\//);
   await expect(page).toHaveTitle(/Caption Lanes/);
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Know where every caption came from.');
   const results = await new AxeBuilder({ page }).analyze();
@@ -61,10 +64,48 @@ test('works at 390px and restores local captions', async ({ page }) => {
   expect(await page.locator('body').evaluate((body) => body.scrollWidth <= innerWidth)).toBe(true);
 });
 
+test('all reported mobile controls have at least 44px touch targets', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/');
+  await page.locator('.skip-link').focus();
+
+  const expectTouchTarget = async (selector: string) => {
+    const targets = page.locator(selector);
+    for (let index = 0; index < await targets.count(); index += 1) {
+      const box = await targets.nth(index).boundingBox();
+      expect(box, `${selector}[${index}] is not rendered`).not.toBeNull();
+      expect(box!.width, `${selector}[${index}] width`).toBeGreaterThanOrEqual(44);
+      expect(box!.height, `${selector}[${index}] height`).toBeGreaterThanOrEqual(44);
+    }
+  };
+
+  await expectTouchTarget('.skip-link, .brand, footer a, footer button');
+  await page.getByRole('button', { name: 'Explore with typed captions' }).click();
+  await expectTouchTarget('.session-actions button');
+  expect(await page.locator('body').evaluate((body) => body.scrollWidth <= innerWidth)).toBe(true);
+});
+
+test('Plus uses the registered Sociobot hosted checkout', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Caption Lanes Plus' }).click();
+  await expect(page.getByRole('link', { name: 'Buy Caption Lanes Plus' })).toHaveAttribute(
+    'href',
+    'https://api.sociobot.in/api/v1/products/speaker-lane-captions/checkout'
+  );
+});
+
 test('reloads the app shell offline after installation', async ({ page, context }) => {
   await page.goto('/');
   await page.evaluate(async () => { await navigator.serviceWorker.ready; });
   await page.reload();
+  const cacheState = await page.evaluate(async () => {
+    const names = await caches.keys();
+    const urls = (await Promise.all(names.map(async (name) => (await caches.open(name)).keys()))).flat().map((request) => request.url);
+    return { names, urls };
+  });
+  expect(cacheState.names.some((name) => /^caption-lanes-[a-f0-9]{12}$/.test(name))).toBe(true);
+  expect(cacheState.urls.some((url) => /\/assets\/app-[A-Za-z0-9_-]+\.js$/.test(url))).toBe(true);
+  expect(cacheState.urls.some((url) => /\/assets\/styles-[A-Za-z0-9_-]+\.css$/.test(url))).toBe(true);
   await context.setOffline(true);
   await page.reload();
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();

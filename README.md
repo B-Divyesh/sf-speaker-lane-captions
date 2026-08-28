@@ -24,6 +24,8 @@ Requires Node.js 20 or newer.
 npm ci
 npm run dev
 npm test
+npm run lint
+npm run typecheck
 npm run build
 ```
 
@@ -36,9 +38,10 @@ npm run test:unit
 npm run test:e2e
 npm run preview
 npm run cap:sync
+npm run test:live
 ```
 
-The end-to-end suite exercises a 390 px phone viewport, keyboard and typed-caption paths, persistence, legal pages, axe checks, and an offline service-worker reload.
+The end-to-end suite exercises desktop Chromium and an exact 390 × 844 phone viewport, keyboard and typed-caption paths, persistence, legal pages, measured 44 px touch targets, axe checks, and a versioned offline service-worker reload. `npm run test:live` checks the deployed artifact byte-for-byte along with the production checkout redirect, favicon, CSP, permissions policy, and frame protection; run it only after deployment.
 
 ## Android project
 

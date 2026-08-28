@@ -31,11 +31,11 @@ button:active, .button-link:active { transform: translateY(1px); }
 [hidden] { display: none !important; }
 .visually-hidden { position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 
-.skip-link { position: fixed; left: 16px; top: 12px; z-index: 100; padding: 12px 16px; background: var(--fog); color: var(--night); border-radius: 8px; transform: translateY(-160%); transition: transform 180ms ease; }
+.skip-link { position: fixed; left: 16px; top: 12px; z-index: 100; min-height: 44px; padding: 12px 16px; display: inline-flex; align-items: center; background: var(--fog); color: var(--night); border-radius: 8px; transform: translateY(-160%); transition: transform 180ms ease; }
 .skip-link:focus { transform: translateY(0); }
 
 .topbar { width: min(1180px, calc(100% - 32px)); margin: 0 auto; min-height: 72px; padding: max(12px, env(safe-area-inset-top)) 0 8px; display: flex; justify-content: space-between; align-items: center; gap: 16px; }
-.brand { display: inline-flex; align-items: center; gap: 10px; color: var(--fog); font-size: 17px; font-weight: 700; text-decoration: none; }
+.brand { min-height: 44px; display: inline-flex; align-items: center; gap: 10px; color: var(--fog); font-size: 17px; font-weight: 700; text-decoration: none; }
 .brand-mark { display: grid; grid-template-columns: repeat(3, 5px); align-items: end; gap: 3px; width: 22px; height: 22px; }
 .brand-mark i { display: block; width: 5px; height: 12px; border-radius: 3px; background: var(--tide); }
 .brand-mark i:nth-child(2) { height: 20px; background: var(--lantern); }
@@ -106,8 +106,9 @@ input::placeholder { color: #8b9992; }
 
 footer { width: min(1180px, calc(100% - 32px)); margin: 0 auto; padding: 28px 0 max(32px, env(safe-area-inset-bottom)); border-top: 1px solid #293632; color: var(--mist); display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px 24px; font-size: 14px; }
 footer p { margin: 0; }
-footer nav { display: flex; gap: 20px; }
-.footer-link { padding: 0; border: 0; background: transparent; color: var(--lantern); text-decoration: underline; text-underline-offset: .2em; cursor: pointer; }
+footer nav { display: flex; flex-wrap: wrap; gap: 8px; }
+footer nav a, .footer-link { min-width: 44px; min-height: 44px; padding: 8px; display: inline-flex; align-items: center; justify-content: center; }
+.footer-link { border: 0; background: transparent; color: var(--lantern); text-decoration: underline; text-underline-offset: .2em; cursor: pointer; }
 .generated-note { flex-basis: 100%; font-size: 12px; }
 
 dialog { width: min(620px, calc(100% - 24px)); max-height: calc(100dvh - 24px); margin: auto; padding: 0; overflow: auto; color: var(--fog); background: var(--pine); border: 1px solid #40514b; border-radius: 24px; box-shadow: 0 30px 100px #000c; }
@@ -132,6 +133,7 @@ legend { margin-bottom: 12px; font-weight: 700; }
 .price span { color: var(--mist); font-family: Arial, sans-serif; font-size: 16px; }
 .upgrade-body > p { line-height: 1.55; }
 .upgrade-body .primary-button { margin: 8px 0; }
+.upgrade-body > p:last-child a, .legal-page main a { min-height: 44px; display: inline-flex; align-items: center; }
 .restore-form { margin-top: 24px; padding-top: 24px; border-top: 1px solid #35443f; }
 .restore-form label { display: block; margin-bottom: 8px; font-weight: 700; }
 #licenseStatus { color: var(--mist); font-size: 14px; }
@@ -165,9 +167,9 @@ legend { margin-bottom: 12px; font-weight: 700; }
   .consent-panel { padding-top: 44px; }
   .consent-panel form { padding: 18px; }
   .room { margin-top: 20px; }
-  .room-heading { align-items: flex-start; }
-  .session-actions { display: grid; grid-template-columns: repeat(3, auto); }
-  .session-actions button { min-width: 0; padding-inline: 12px; }
+  .room-heading { align-items: flex-start; flex-direction: column; }
+  .session-actions { width: 100%; display: grid; grid-template-columns: repeat(3, minmax(44px, 1fr)); }
+  .session-actions button { min-width: 44px; padding-inline: 12px; }
   .direction-picker { align-items: flex-start; flex-direction: column; }
   .type-caption > div, .restore-form > div { flex-direction: column; }
   .type-caption button, .restore-form button { width: 100%; }

@@ -14,6 +14,7 @@ export default defineConfig({
     timeout: 120_000
   },
   projects: [
-    { name: 'mobile-chromium', use: { ...devices['Pixel 5'] } }
+    { name: 'desktop-chromium', use: { ...devices['Desktop Chrome'] } },
+    { name: 'mobile-390-chromium', use: { ...devices['Pixel 5'], viewport: { width: 390, height: 844 } } }
   ]
 });

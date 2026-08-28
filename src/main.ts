@@ -24,7 +24,7 @@ const defaultPreferences: Preferences = {
   }
 };
 
-let preferences = loadPreferences();
+const preferences = loadPreferences();
 let captions: CaptionEntry[] = [];
 let activeLane: LaneId = 'center';
 let directionConfidence: number | null = null;
