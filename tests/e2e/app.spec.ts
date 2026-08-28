@@ -26,6 +26,29 @@ test('runs the typed directional caption flow and passes axe', async ({ page }) 
   expect(consoleErrors).toEqual([]);
 });
 
+test('typed Pause and Resume never request microphone access', async ({ page }) => {
+  await page.addInitScript(() => {
+    let calls = 0;
+    Object.defineProperty(window, '__captionLanesGetUserMediaCalls', { get: () => calls });
+    const mediaDevices = navigator.mediaDevices || ({} as MediaDevices);
+    Object.defineProperty(navigator, 'mediaDevices', { configurable: true, value: mediaDevices });
+    Object.defineProperty(mediaDevices, 'getUserMedia', {
+      configurable: true,
+      value: async () => {
+        calls += 1;
+        throw new DOMException('Unexpected microphone request', 'NotAllowedError');
+      }
+    });
+  });
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Explore with typed captions' }).click();
+  await page.getByRole('button', { name: 'Pause' }).click();
+  await page.getByRole('button', { name: 'Resume' }).click();
+
+  await expect(page.getByText('Typed-caption mode · microphone is off')).toBeVisible();
+  expect(await page.evaluate(() => (window as typeof window & { __captionLanesGetUserMediaCalls: number }).__captionLanesGetUserMediaCalls)).toBe(0);
+});
+
 test('works at 390px and restores local captions', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');

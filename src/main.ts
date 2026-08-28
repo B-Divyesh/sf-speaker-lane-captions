@@ -29,6 +29,9 @@ let captions: CaptionEntry[] = [];
 let activeLane: LaneId = 'center';
 let directionConfidence: number | null = null;
 let paused = false;
+// Typed sessions are an explicit no-microphone route. Keep that choice for the
+// lifetime of the room so Pause/Resume cannot accidentally escalate it.
+let sessionMode: 'microphone' | 'typed' | null = null;
 let plus = false;
 let mediaStream: MediaStream | null = null;
 let audioContext: AudioContext | null = null;
@@ -146,16 +149,19 @@ async function startRoom(practice = false): Promise<void> {
   $('#room').scrollIntoView({ block: 'start' });
   render();
   if (practice) {
+    sessionMode = 'typed';
+    paused = false;
+    $('#room-status').textContent = 'Typed-caption mode · microphone is off';
     showMicError('Typed-caption mode is active. Choose a direction, then type each utterance below.');
     $('#typedCaption').focus();
     return;
   }
+  sessionMode = 'microphone';
   if (!speech.supported()) {
     showMicError('On-device speech is not available in this browser. Use typed captions, or open the Android build on a supported device.');
     return;
   }
-  await speech.start();
-  await startDirectionAudio();
+  if (await speech.start()) await startDirectionAudio();
 }
 
 async function startDirectionAudio(): Promise<void> {
@@ -228,9 +234,18 @@ function bindEvents(): void {
   $('#pauseButton').addEventListener('click', () => {
     paused = !paused; const button = $('#pauseButton');
     if (paused) { stopAudio(); button.innerHTML = '<span aria-hidden="true">▶</span> Resume'; }
-    else { button.innerHTML = '<span aria-hidden="true">Ⅱ</span> Pause'; void speech.start().then(() => startDirectionAudio()); }
+    else {
+      button.innerHTML = '<span aria-hidden="true">Ⅱ</span> Pause';
+      if (sessionMode === 'typed') {
+        $('#room-status').textContent = 'Typed-caption mode · microphone is off';
+        return;
+      }
+      if (sessionMode === 'microphone') void speech.start().then((started) => {
+        if (started) return startDirectionAudio();
+      });
+    }
   });
-  $('#endButton').addEventListener('click', () => { stopAudio(); paused = false; $('#room').hidden = true; $('#welcome').hidden = false; $('#welcome').scrollIntoView(); });
+  $('#endButton').addEventListener('click', () => { stopAudio(); paused = false; sessionMode = null; $('#room').hidden = true; $('#welcome').hidden = false; $('#welcome').scrollIntoView(); });
   $('#exportButton').addEventListener('click', exportTranscript);
   $('#openSettings').addEventListener('click', () => { renderLaneSettings(); $<HTMLDialogElement>('#settingsDialog').showModal(); });
   $('#openUpgrade').addEventListener('click', () => $<HTMLDialogElement>('#upgradeDialog').showModal());
