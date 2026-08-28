@@ -64,6 +64,54 @@ test('works at 390px and restores local captions', async ({ page }) => {
   expect(await page.locator('body').evaluate((body) => body.scrollWidth <= innerWidth)).toBe(true);
 });
 
+test('import asks before replacing local captions and persists only after confirmation', async ({ page }) => {
+  const transcript = {
+    product: 'Caption Lanes',
+    captions: [{ id: 'replacement', lane: 'right', text: 'Replacement only', confidence: null, createdAt: '2026-08-28T10:00:00.000Z', source: 'typed' }]
+  };
+  const importFile = { name: 'caption-lanes.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(transcript)) };
+
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Explore with typed captions' }).click();
+  const input = page.getByLabel(/Type a caption/);
+  await input.fill('Existing one');
+  await page.getByRole('button', { name: 'Add to lane' }).click();
+  await input.fill('Existing two');
+  await page.getByRole('button', { name: 'Add to lane' }).click();
+  await page.getByRole('button', { name: 'Open settings' }).click();
+
+  page.once('dialog', async (dialog) => {
+    expect(dialog.type()).toBe('confirm');
+    expect(dialog.message()).toBe('Import 1 caption? This will replace 2 saved captions on this device.');
+    await dialog.dismiss();
+  });
+  await page.locator('#importFile').setInputFiles(importFile);
+  await expect(page.locator('.lane[data-id="center"]')).toContainText('Existing one');
+  await expect(page.locator('.lane[data-id="center"]')).toContainText('Existing two');
+
+  page.once('dialog', async (dialog) => await dialog.accept());
+  await page.locator('#importFile').setInputFiles(importFile);
+  await expect(page.locator('.lane[data-id="right"]')).toContainText('Replacement only');
+  await expect(page.locator('.lanes')).not.toContainText('Existing one');
+  await page.reload();
+  await page.getByRole('button', { name: 'Explore with typed captions' }).click();
+  await expect(page.locator('.lane[data-id="right"]')).toContainText('Replacement only');
+  await expect(page.locator('.lanes')).not.toContainText('Existing two');
+});
+
+test('a lane label can be renamed and is retained in the directional controls', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Open settings' }).click();
+  await page.getByLabel('← Left lane label').fill('Window');
+  await page.getByLabel('← Left lane label').press('Tab');
+  await page.getByRole('button', { name: 'Close settings' }).click();
+  await page.getByRole('button', { name: 'Explore with typed captions' }).click();
+  await expect(page.getByRole('button', { name: /← Window shortcut 1/ })).toBeVisible();
+  await page.reload();
+  await page.getByRole('button', { name: 'Explore with typed captions' }).click();
+  await expect(page.getByRole('button', { name: /← Window shortcut 1/ })).toBeVisible();
+});
+
 test('all reported mobile controls have at least 44px touch targets', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');

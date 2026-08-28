@@ -100,8 +100,15 @@ function renderDirectionButtons(): void {
 function renderLaneSettings(): void {
   $('#laneSettings').innerHTML = visibleLanes().map((lane) => {
     const preference = preferences.lanes[lane];
-    return `<div class="lane-setting"><span>${laneMeta[lane].arrow} ${lane === 'center' ? 'Centre' : lane[0].toUpperCase() + lane.slice(1)}</span><button class="swatch-button" type="button" data-color-lane="${lane}" style="--swatch:${preference.color}" aria-label="Change ${lane} lane color" ${preference.locked ? 'disabled' : ''}></button><button class="lock-button" type="button" data-lock-lane="${lane}" aria-pressed="${preference.locked}">${preference.locked ? 'Locked' : 'Unlocked'}</button></div>`;
+    const defaultLabel = lane === 'center' ? 'Centre' : lane[0].toUpperCase() + lane.slice(1);
+    return `<div class="lane-setting"><label for="lane-label-${lane}">${laneMeta[lane].arrow} ${defaultLabel} lane label</label><input id="lane-label-${lane}" class="lane-label-input" data-label-lane="${lane}" value="${escapeText(preference.label)}" maxlength="24" autocomplete="off" /><button class="swatch-button" type="button" data-color-lane="${lane}" style="--swatch:${preference.color}" aria-label="Change ${escapeText(preference.label)} lane color" ${preference.locked ? 'disabled' : ''}></button><button class="lock-button" type="button" data-lock-lane="${lane}" aria-pressed="${preference.locked}">${preference.locked ? 'Locked' : 'Unlocked'}</button></div>`;
   }).join('');
+  $('#laneSettings').querySelectorAll<HTMLInputElement>('[data-label-lane]').forEach((input) => input.addEventListener('change', () => {
+    const lane = input.dataset.labelLane as LaneId;
+    const nextLabel = input.value.trim();
+    preferences.lanes[lane].label = nextLabel || defaultPreferences.lanes[lane].label;
+    savePreferences(); renderLaneSettings(); render();
+  }));
   $('#laneSettings').querySelectorAll<HTMLButtonElement>('[data-lock-lane]').forEach((button) => button.addEventListener('click', () => {
     const lane = button.dataset.lockLane as LaneId;
     preferences.lanes[lane].locked = !preferences.lanes[lane].locked;
@@ -257,13 +264,33 @@ function bindEvents(): void {
   });
   $('#importButton').addEventListener('click', () => $<HTMLInputElement>('#importFile').click());
   $('#importFile').addEventListener('change', async (event) => {
-    const file = (event.target as HTMLInputElement).files?.[0]; if (!file) return;
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0]; if (!file) return;
+    let entries: CaptionEntry[];
     try {
       const parsed = JSON.parse(await file.text()) as { captions?: CaptionEntry[] } | CaptionEntry[];
-      const entries = Array.isArray(parsed) ? parsed : parsed.captions;
-      if (!entries || !entries.every((entry) => entry.id && laneOrder.includes(entry.lane) && entry.text && entry.createdAt)) throw new Error();
-      captions = entries; await replaceCaptions(entries); render(); toast(`${entries.length} captions imported.`);
-    } catch { toast('That file is not a Caption Lanes transcript.'); }
+      const imported = Array.isArray(parsed) ? parsed : parsed.captions;
+      if (!imported || !imported.every((entry) => entry.id && laneOrder.includes(entry.lane) && entry.text && entry.createdAt)) throw new Error();
+      entries = imported;
+    } catch {
+      toast('That file is not a Caption Lanes transcript.');
+      input.value = '';
+      return;
+    }
+    const currentCount = captions.length;
+    const importedCount = entries.length;
+    if (!confirm(`Import ${importedCount} caption${importedCount === 1 ? '' : 's'}? This will replace ${currentCount} saved caption${currentCount === 1 ? '' : 's'} on this device.`)) {
+      input.value = '';
+      return;
+    }
+    try {
+      await replaceCaptions(entries);
+      captions = entries;
+      render();
+      toast(`${entries.length} captions imported.`);
+    } catch {
+      toast('The transcript could not be saved. Your current captions are unchanged.');
+    } finally { input.value = ''; }
   });
   $('#restoreForm').addEventListener('submit', (event) => {
     event.preventDefault(); const input = $<HTMLInputElement>('#licenseInput');

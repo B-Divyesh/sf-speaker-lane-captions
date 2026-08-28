@@ -124,7 +124,9 @@ input[type="range"] { width: 100%; min-height: 44px; accent-color: var(--lantern
 .switch-row input { transform: scale(1.15); }
 fieldset { margin: 0; padding: 0; border: 0; }
 legend { margin-bottom: 12px; font-weight: 700; }
-.lane-setting { display: grid; grid-template-columns: 1fr auto auto; gap: 8px; align-items: center; min-height: 52px; }
+.lane-setting { display: grid; grid-template-columns: minmax(0, 1fr) 44px 86px; gap: 8px; align-items: center; min-height: 52px; }
+.lane-setting label { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+.lane-label-input { min-width: 0; min-height: 44px; padding: 10px 12px; border: 1px solid #465750; border-radius: 10px; background: var(--night); color: var(--fog); font: inherit; }
 .swatch-button { width: 44px; height: 44px; border: 2px solid var(--swatch); border-radius: 50%; background: color-mix(in srgb, var(--swatch) 20%, var(--night)); cursor: pointer; }
 .swatch-button:disabled { cursor: not-allowed; opacity: .42; }
 .lock-button { min-width: 86px; min-height: 44px; border: 1px solid #465750; border-radius: 999px; background: transparent; color: var(--fog); cursor: pointer; }
