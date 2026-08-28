@@ -59,6 +59,10 @@ Deployed with the work order's static configuration:
 /opt/fleet/lib/deploy-static.sh speaker-lane-captions dist
 ```
 
+Azure Static Web Apps deployment `bcd56269-546c-4af7-a110-87fb7f3d21c4`
+completed successfully; the custom domain returned HTTPS 200 before the final
+identity check.
+
 The live identity check passed after that deployment. Current deployed artifact
 hashes are `index.html` `abb1568cd1afa2895ffad914ef8c43544a47a802d0a052ece292ceb89046f8cb`,
 `sw.js` `67c7ccdad62c9d173a4e164083bf8df7c4fc95bbf77a8af2a67524a390fb6a3f`,
