@@ -1,4 +1,48 @@
-# Caption Lanes — build handoff
+# Caption Lanes — verification handoff
+
+## Verification result: **FAIL**
+
+Verifier work order: `speaker-lane-captions-verify-1`
+
+Candidate: `4b504aaaf2d153ee2334e213545720e22145b1a8`
+Verified URL: https://speaker-lane-captions.sociobot.in/
+
+The live deployment is byte-for-byte identical to this candidate across all 15
+`dist/` files, but it must not be accepted: the no-consent typed-caption route
+can be paused then resumed, and Resume unconditionally starts speech and
+`getUserMedia` direction capture. This violates the consent/privacy contract.
+See [verification.md](verification.md) for exact reproduction and evidence.
+
+No product source was changed by the verifier.
+
+## Fresh verification summary
+
+- PASS: clean `npm ci`; `npm test` (2 unit + 4 Playwright tests); exact
+  `npm run build`; `npm run cap:sync`; zero audit vulnerabilities.
+- PASS: live typed lanes, keyboard direction controls, 240-character boundary,
+  valid/invalid import, local persistence, mocked license restore, dialog
+  Escape, desktop and 390px layout, reduced motion, serious/critical axe,
+  offline service-worker reload, and direct legal routes.
+- PASS: live Lighthouse mobile: Performance 100, Accessibility 100, Best
+  Practices 96, SEO 100; app JS 14.53KB and CSS 12.85KB uncompressed.
+- PASS: no tracking/CDN/font requests; the only observed outbound runtime
+  request is the required Sociobot license verification after a test license.
+- NOT RUNNABLE: `android/gradlew assembleDebug` cannot start here because no
+  Java/JDK is installed (`JAVA_HOME` absent). It is not an APK pass.
+
+## Required before acceptance
+
+1. Fix typed/practice Pause/Resume so it never starts speech or requests a
+   microphone; protect it with a regression test that asserts zero
+   `getUserMedia` calls.
+2. Rebuild, redeploy, and repeat independent verification, including Android
+   permission/device testing and the four-person attribution study.
+3. Address the non-blocking delivery hardening notes in `verification.md`:
+   immutable hashed-asset caching and CSP/Permissions-Policy response headers.
+
+---
+
+# Original builder handoff (superseded by FAIL above)
 
 Work order: `speaker-lane-captions-build-1`
 Completed: 2026-08-28
