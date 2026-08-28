@@ -59,7 +59,7 @@ All repository gates were rerun after a clean dependency installation.
 
 | Check | Result and evidence |
 | --- | --- |
-| Clean install/security | PASS — `npm ci` installed 298 packages; `npm audit --audit-level=high` found 0 vulnerabilities. |
+| Clean install/security | PASS — `npm ci` installed 255 packages; `npm audit --audit-level=high` found 0 vulnerabilities. |
 | Unit/integration/browser | PASS — `npm test`: 3/3 Vitest and 14/14 Playwright tests across desktop Chromium and exact 390×844 mobile. |
 | Lint/type | PASS — `npm run lint` and strict `npm run typecheck`. |
 | Production build | PASS — `npm run build`; `dist/` is 220 KiB. App JS is 14,790 B (5,827 gzip), CSS 13,207 B (3,891 gzip), mobile hero 8,074 B. |
