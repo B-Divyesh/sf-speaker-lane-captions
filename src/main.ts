@@ -118,7 +118,7 @@ function render(): void {
     const preference = preferences.lanes[lane];
     const entries = captions.filter((entry) => entry.lane === lane && (!preferences.hideUncertain || entry.confidence === null || entry.confidence >= .6)).slice(-12);
     const list = entries.length
-      ? `<ol class="utterances">${entries.map((entry) => `<li class="utterance">${escapeText(entry.text)}<time datetime="${entry.createdAt}">${new Date(entry.createdAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}${entry.confidence === null ? ' · typed' : entry.confidence < .6 ? ' · uncertain' : ''}</time></li>`).join('')}</ol>`
+      ? `<ol class="utterances" tabindex="0" aria-label="${escapeText(preference.label)} captions">${entries.map((entry) => `<li class="utterance">${escapeText(entry.text)}<time datetime="${entry.createdAt}">${new Date(entry.createdAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}${entry.confidence === null ? ' · typed' : entry.confidence < .6 ? ' · uncertain' : ''}</time></li>`).join('')}</ol>`
       : `<p class="empty-lane">${laneMeta[lane].empty}</p>`;
     return `<section class="lane ${lane === activeLane ? 'active' : ''}" data-id="${lane}" style="--lane-color:${preference.color}" aria-label="${escapeText(preference.label)} caption lane">
       <header><span class="lane-direction">${laneMeta[lane].arrow} ${escapeText(preference.label)}</span><span class="confidence">${lane === activeLane ? confidenceText(directionConfidence) : 'Waiting'}</span></header>${list}</section>`;

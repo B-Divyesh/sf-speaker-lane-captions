@@ -52,11 +52,14 @@ test('keeps a seeded demo separate from real data @claim:demo-isolation', async 
     database.close();
   });
 
-  await page.goto('/demo');
+  await page.getByRole('link', { name: 'Try it with sample data' }).click();
+  await expect(page).toHaveURL(/\/demo$/);
   await expect(page).toHaveTitle('Demo — Caption Lanes');
   await expect(page.getByText('Demo — sample data, nothing is saved')).toBeVisible();
   await expect(page.locator('.utterance')).toHaveCount(6);
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+  await page.locator('.utterances').first().focus();
+  expect(await page.locator('.utterances').first().evaluate((element) => getComputedStyle(element).outlineWidth)).toBe('3px');
   await expect(page.getByText('Real transcript stays private')).toHaveCount(0);
   await expect(page.getByRole('button', { name: /← Left shortcut 1/ })).toBeVisible();
 
