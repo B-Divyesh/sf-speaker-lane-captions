@@ -82,5 +82,82 @@
     "where": "landing facts, paid section, terms, README",
     "test": "npm run test:e2e -- --grep @claim:plus-license",
     "sandbox": "fresh /demo; enter real mode with a recorded valid verification; assert price, checkout URL, four lanes, and one request across reload"
+  },
+  {
+    "id": "consent-before-microphone",
+    "claim": "Caption Lanes starts speech and microphone access only after the consent checkbox is selected.",
+    "where": "consent panel, How it works, privacy page, README",
+    "test": "npm run test:e2e -- --grep @claim:consent-before-microphone",
+    "sandbox": "fresh real mode with recorded speech and microphone counters; attempt start before and after consent"
+  },
+  {
+    "id": "microphone-lifecycle",
+    "claim": "Caption Lanes stops its microphone track on pause, end, app navigation, background, and close.",
+    "where": "consent panel, privacy page",
+    "test": "npm run test:e2e -- --grep @claim:microphone-lifecycle",
+    "sandbox": "fresh real mode with a counted audio-track fixture; exercise every stop path and assert one stop per active track"
+  },
+  {
+    "id": "no-accounts-analytics-archive",
+    "claim": "Caption Lanes uses no account, analytics, or cloud archive service.",
+    "where": "landing privacy section, consent panel, privacy page",
+    "test": "npm run test:e2e -- --grep @claim:no-accounts-analytics-archive",
+    "sandbox": "fresh demo, real typed, and licensed flows; record all requests and assert only same-origin files plus the named license endpoint"
+  },
+  {
+    "id": "no-identity-inference",
+    "claim": "Caption Lanes does not infer or store speaker identities or voiceprints.",
+    "where": "landing limits, consent panel, privacy page, README",
+    "test": "npm run test:e2e -- --grep @claim:no-identity-inference",
+    "sandbox": "fresh demo; add a caption and assert every stored row contains only caption, direction, confidence, source, id, and time fields"
+  },
+  {
+    "id": "mono-input",
+    "claim": "A mono microphone shows the automatic-direction limitation while manual placement remains available.",
+    "where": "README, live room warning",
+    "test": "npm run test:e2e -- --grep @claim:mono-input",
+    "sandbox": "fresh real flow with a recorded one-channel track; assert warning, choose Right manually, and place a caption"
+  },
+  {
+    "id": "language-pack-flow",
+    "claim": "When a supported browser offers an on-device language pack, Caption Lanes installs it before starting recognition.",
+    "where": "consent note, README",
+    "test": "npm run test:e2e -- --grep @claim:language-pack-flow",
+    "sandbox": "fresh real flow with recorded downloadable and install responses; assert installation finishes before recognition starts"
+  },
+  {
+    "id": "free-core-controls",
+    "claim": "Typed captions, display controls, confidence filtering, and transcript export remain available without a license.",
+    "where": "landing Plus section, Plus dialog, terms, README",
+    "test": "npm run test:e2e -- --grep @claim:free-core-controls",
+    "sandbox": "fresh real mode with no license; type a caption, change size, enable filtering, change a lane color, and export JSON"
+  },
+  {
+    "id": "license-portability",
+    "claim": "A valid Caption Lanes Plus license can be restored in a fresh browser.",
+    "where": "Plus dialog, README",
+    "test": "npm run test:e2e -- --grep @claim:license-portability",
+    "sandbox": "two fresh browser contexts with the same recorded valid token; restore independently and assert four lanes in each"
+  },
+  {
+    "id": "license-reconnect",
+    "claim": "Caption Lanes rechecks a cached license when the device reconnects.",
+    "where": "README, privacy page",
+    "test": "npm run test:e2e -- --grep @claim:license-reconnect",
+    "sandbox": "fresh real mode with a cached valid verdict; dispatch reconnect with a recorded revoked response and assert the fourth lane closes"
+  },
+  {
+    "id": "hosted-checkout",
+    "claim": "The buy link redirects to Sociobot/Dodo hosted checkout, and Caption Lanes does not collect card details.",
+    "where": "Plus dialog, terms, README",
+    "test": "npm run test:e2e -- --grep @claim:hosted-checkout",
+    "sandbox": "assert the app has no card fields; make five live-safe GET requests without redirects; assert every response is 303 to checkout.dodopayments.com"
+  },
+  {
+    "id": "revoked-license",
+    "claim": "A revoked or refunded license stops Caption Lanes Plus features.",
+    "where": "Plus dialog, terms",
+    "test": "npm run test:e2e -- --grep @claim:revoked-license",
+    "sandbox": "fresh real mode with a recorded valid response followed by a recorded revoked response; assert the fourth lane is removed"
   }
 ]

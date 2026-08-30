@@ -21,15 +21,17 @@ check(demoText.includes('Try it with sample data'), 'demo route did not receive 
 const missing = await fetch(`${origin}/does-not-exist-repair-5`, { cache: 'no-store' });
 const missingText = await missing.text();
 check(missing.status === 404, `unknown route returned ${missing.status}, expected 404`);
-check(missingText.includes('This caption lane ends here.'), 'unknown route did not receive the designed 404 page');
+check(missingText.includes('Page not found.'), 'unknown route did not receive the designed 404 page');
 
 const favicon = await fetch(`${origin}/favicon.ico`, { cache: 'no-store' });
 check(favicon.status === 200, `favicon returned ${favicon.status}`);
 check((favicon.headers.get('content-type') || '').startsWith('image/'), 'favicon is not served as an image');
 
-const checkout = await fetch('https://api.sociobot.in/api/v1/products/speaker-lane-captions/checkout', { redirect: 'manual' });
-check(checkout.status === 303, `checkout returned ${checkout.status}, expected 303`);
-check((checkout.headers.get('location') || '').startsWith('https://checkout.dodopayments.com/'), 'checkout did not redirect to hosted Dodo checkout');
+for (let attempt = 1; attempt <= 10; attempt += 1) {
+  const checkout = await fetch('https://api.sociobot.in/api/v1/products/speaker-lane-captions/checkout', { redirect: 'manual' });
+  check(checkout.status === 303, `checkout attempt ${attempt} returned ${checkout.status}, expected 303`);
+  check((checkout.headers.get('location') || '').startsWith('https://checkout.dodopayments.com/'), `checkout attempt ${attempt} did not redirect to hosted Dodo checkout`);
+}
 
 const csp = root.headers.get('content-security-policy') || '';
 const permissions = root.headers.get('permissions-policy') || '';

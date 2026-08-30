@@ -135,7 +135,7 @@ test('all visible mobile controls have at least 44px touch targets', async ({ pa
   await page.getByRole('button', { name: 'Open settings' }).click();
   await expectTouchTargets();
   await page.getByRole('button', { name: 'Close settings' }).click();
-  await page.getByRole('button', { name: 'Caption Lanes Plus' }).click();
+  await page.getByRole('button', { name: 'View Caption Lanes Plus' }).click();
   await expectTouchTargets();
   expect(await page.locator('body').evaluate((body) => body.scrollWidth <= innerWidth)).toBe(true);
 });
@@ -166,13 +166,13 @@ test('respects reduced motion and reflows at 320px', async ({ page }) => {
   await page.getByRole('button', { name: 'Open settings' }).click();
   expect(await page.locator('body').evaluate((body) => body.scrollWidth <= innerWidth)).toBe(true);
   await page.getByRole('button', { name: 'Close settings' }).click();
-  await page.getByRole('button', { name: 'Caption Lanes Plus' }).click();
+  await page.getByRole('button', { name: 'View Caption Lanes Plus' }).click();
   expect(await page.locator('body').evaluate((body) => body.scrollWidth <= innerWidth)).toBe(true);
 });
 
 test('Plus uses the registered Sociobot hosted checkout', async ({ page }) => {
   await page.goto('/');
-  await page.getByRole('button', { name: 'Caption Lanes Plus' }).click();
+  await page.getByRole('button', { name: 'View Caption Lanes Plus' }).click();
   await expect(page.getByRole('link', { name: 'Buy Caption Lanes Plus' })).toHaveAttribute(
     'href',
     'https://api.sociobot.in/api/v1/products/speaker-lane-captions/checkout'
@@ -248,7 +248,7 @@ test('the active room has one visible level-one heading and no axe violations', 
   expect(await page.locator('h1:visible').count()).toBe(1);
   const results = await new AxeBuilder({ page }).analyze();
   expect(results.violations).toEqual([]);
-  await page.getByRole('button', { name: 'End' }).click();
+  await page.getByRole('button', { name: 'End captions' }).click();
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Place live captions by speaker direction.');
   expect(await page.locator('h1').count()).toBe(1);
 });
@@ -261,5 +261,51 @@ test('legal and not-found pages are direct-loadable and accessible', async ({ pa
     expect(await page.locator('h1').count()).toBe(1);
     const results = await new AxeBuilder({ page }).analyze();
     expect(results.violations.filter((violation) => ['serious', 'critical'].includes(violation.impact || ''))).toEqual([]);
+  }
+});
+
+test('moves focus, announces titles, and restores routes with browser history', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('link', { name: 'Try it with sample data' }).click();
+  await expect(page).toHaveURL(/\/demo$/);
+  await expect(page).toHaveTitle('Demo — Caption Lanes');
+  await expect(page.getByRole('heading', { level: 1, name: 'Conversation' })).toBeFocused();
+  await expect(page.locator('#routeAnnouncement')).toContainText('Demo — Caption Lanes. Conversation');
+  await page.goBack();
+  await expect(page).toHaveURL('http://127.0.0.1:4173/');
+  await expect(page).toHaveTitle('Caption Lanes — Place captions by speaker direction');
+  await expect(page.getByRole('heading', { level: 1, name: 'Place live captions by speaker direction.' })).toBeFocused();
+  await expect(page.locator('#routeAnnouncement')).toContainText('Caption Lanes — Place captions by speaker direction');
+  await page.goForward();
+  await expect(page).toHaveURL(/\/demo$/);
+  await expect(page.getByRole('heading', { level: 1, name: 'Conversation' })).toBeFocused();
+});
+
+test('opens the isolated sample directly with ?demo=1', async ({ page }) => {
+  await page.goto('/?demo=1');
+  await expect(page).toHaveTitle('Demo — Caption Lanes');
+  await expect(page.getByText('Demo — sample data, nothing is saved')).toBeVisible();
+  await expect(page.locator('.utterance')).toHaveCount(6);
+  await page.getByLabel(/Type a caption/).fill('Query demo change');
+  await page.getByRole('button', { name: 'Add to lane' }).click();
+  await page.getByRole('button', { name: 'Reset demo' }).click();
+  await expect(page.getByText('Query demo change')).toHaveCount(0);
+});
+
+test('serves complete route-specific metadata on direct routes', async ({ page }) => {
+  const cases = [
+    { route: '/privacy/', title: 'Privacy — Caption Lanes', canonical: '/privacy/' },
+    { route: '/terms/', title: 'Terms — Caption Lanes', canonical: '/terms/' },
+    { route: '/404.html', title: 'Page not found — Caption Lanes', canonical: '/404' }
+  ];
+  for (const item of cases) {
+    await page.goto(item.route);
+    await expect(page).toHaveTitle(item.title);
+    expect((await page.locator('link[rel="canonical"]').getAttribute('href'))?.endsWith(item.canonical)).toBe(true);
+    for (const selector of ['meta[property="og:type"]', 'meta[property="og:title"]', 'meta[property="og:description"]', 'meta[property="og:url"]', 'meta[property="og:image"]', 'meta[name="twitter:card"]', 'meta[name="twitter:title"]', 'meta[name="twitter:description"]', 'meta[name="twitter:image"]', 'link[rel="apple-touch-icon"]']) {
+      await expect(page.locator(selector), `${item.route} ${selector}`).toHaveCount(1);
+    }
+    await expect(page.getByRole('navigation', { name: 'Main navigation' }).getByRole('link', { name: 'Demo' })).toBeVisible();
+    await expect(page.getByRole('navigation', { name: 'Footer navigation' }).getByRole('link', { name: 'Terms' })).toBeVisible();
   }
 });

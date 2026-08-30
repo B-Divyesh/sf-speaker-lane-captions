@@ -2,7 +2,7 @@
 
 ## Entry point
 
-Open <https://speaker-lane-captions.sociobot.in/demo> or select **Try it with sample data** on the landing page.
+Open <https://speaker-lane-captions.sociobot.in/demo>, add `?demo=1` to the home URL, or select **Try it with sample data**.
 
 The first demo screen is the active caption room. It contains six captions from a realistic group planning a quiet Saturday lunch.
 

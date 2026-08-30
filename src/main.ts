@@ -5,9 +5,9 @@ import { OnDeviceSpeech } from './speech';
 import type { CaptionEntry, LaneId, Preferences } from './types';
 
 const $ = <T extends HTMLElement>(selector: string) => document.querySelector<T>(selector)!;
-const demoMode = location.pathname.replace(/\/+$/, '') === '/demo' || new URLSearchParams(location.search).get('demo') === '1';
-const databaseName = demoMode ? 'demo:caption-lanes' : 'caption-lanes';
-const preferencesKey = demoMode ? 'demo:caption-lanes:preferences' : 'caption-lanes:preferences';
+let demoMode = isDemoUrl();
+let databaseName = demoMode ? 'demo:caption-lanes' : 'caption-lanes';
+let preferencesKey = demoMode ? 'demo:caption-lanes:preferences' : 'caption-lanes:preferences';
 const laneOrder: LaneId[] = ['left', 'center', 'right', 'across'];
 const laneMeta: Record<LaneId, { arrow: string; empty: string }> = {
   left: { arrow: '←', empty: 'Speech from your left will gather here.' },
@@ -52,6 +52,10 @@ const speech = new OnDeviceSpeech(addSpeechCaption, showMicError, (listening) =>
   $('#room-status').textContent = listening ? 'Listening · audio stays on this device' : paused ? 'Paused · microphone is off' : 'Ready · audio stays on this device';
 });
 
+function isDemoUrl(): boolean {
+  return location.pathname.replace(/\/+$/, '') === '/demo' || new URLSearchParams(location.search).get('demo') === '1';
+}
+
 function loadPreferences(): Preferences {
   try {
     const stored = JSON.parse(localStorage.getItem(preferencesKey) || '') as Partial<Preferences>;
@@ -71,6 +75,12 @@ function savePreferences(): void {
 async function discardDemo(): Promise<void> {
   if (!demoMode) return;
   await clearCaptions(databaseName);
+  await new Promise<void>((resolve) => {
+    const request = indexedDB.deleteDatabase(databaseName);
+    request.onsuccess = () => resolve();
+    request.onerror = () => resolve();
+    request.onblocked = () => resolve();
+  });
   localStorage.removeItem(preferencesKey);
 }
 
@@ -97,6 +107,7 @@ function setHeadingLevel(id: string, level: 1 | 2): void {
   const next = document.createElement(`h${level}`);
   next.id = current.id;
   next.className = current.className;
+  next.tabIndex = -1;
   next.textContent = current.textContent;
   current.replaceWith(next);
 }
@@ -109,6 +120,69 @@ function setActiveViewHeadings(roomIsActive: boolean): void {
   }
   setHeadingLevel('room-title', 2);
   setHeadingLevel('page-title', 1);
+}
+
+function updateRouteMetadata(): void {
+  const title = demoMode ? 'Demo — Caption Lanes' : 'Caption Lanes — Place captions by speaker direction';
+  const description = demoMode
+    ? 'Try separate caption lanes with a saved sample conversation and no microphone.'
+    : 'Place live captions into left, centre, and right lanes during small in-person conversations.';
+  const canonical = `https://speaker-lane-captions.sociobot.in${demoMode ? '/demo' : '/'}`;
+  document.title = title;
+  document.querySelector<HTMLMetaElement>('meta[name="description"]')?.setAttribute('content', description);
+  document.querySelector<HTMLLinkElement>('link[rel="canonical"]')?.setAttribute('href', canonical);
+  document.querySelector<HTMLMetaElement>('meta[property="og:title"]')?.setAttribute('content', title);
+  document.querySelector<HTMLMetaElement>('meta[property="og:description"]')?.setAttribute('content', description);
+  document.querySelector<HTMLMetaElement>('meta[property="og:url"]')?.setAttribute('content', canonical);
+  document.querySelector<HTMLMetaElement>('meta[name="twitter:title"]')?.setAttribute('content', title);
+  document.querySelector<HTMLMetaElement>('meta[name="twitter:description"]')?.setAttribute('content', description);
+}
+
+function announceRoute(): void {
+  const heading = $<HTMLHeadingElement>(demoMode ? '#room-title' : '#page-title');
+  $('#routeAnnouncement').textContent = `${document.title}. ${heading.textContent || ''}`;
+  heading.focus({ preventScroll: true });
+}
+
+async function applyRoute(options: { focus?: boolean; consent?: boolean } = {}): Promise<void> {
+  const nextDemoMode = isDemoUrl();
+  if (demoMode && !nextDemoMode) await discardDemo();
+  stopAudio();
+  paused = false;
+  sessionMode = null;
+  demoMode = nextDemoMode;
+  databaseName = demoMode ? 'demo:caption-lanes' : 'caption-lanes';
+  preferencesKey = demoMode ? 'demo:caption-lanes:preferences' : 'caption-lanes:preferences';
+  Object.assign(preferences, demoMode ? structuredClone(defaultPreferences) : loadPreferences());
+  $('#demoBanner').hidden = !demoMode;
+  updateRouteMetadata();
+  if (demoMode) {
+    localStorage.removeItem(preferencesKey);
+    captions = structuredClone(demoCaptions);
+    await replaceCaptions(captions, databaseName);
+    savePreferences();
+    await startRoom(true);
+  } else {
+    captions = await loadCaptions(databaseName).catch(() => []);
+    setActiveViewHeadings(false);
+    $('#room').hidden = true;
+    $('#welcome').hidden = false;
+    savePreferences();
+    plus = optimisticUnlock();
+    void updateLicense();
+    render();
+    renderLaneSettings();
+    if (options.consent) $('#consent-panel').scrollIntoView({ block: 'start' });
+  }
+  if (options.focus !== false) announceRoute();
+}
+
+async function navigateApp(url: URL): Promise<void> {
+  const consent = url.hash === '#consent-panel';
+  const targetIsDemo = url.pathname.replace(/\/+$/, '') === '/demo' || url.searchParams.get('demo') === '1';
+  if (demoMode && !targetIsDemo) await discardDemo();
+  history.pushState({ appRoute: true }, '', `${url.pathname}${url.search}${url.hash}`);
+  await applyRoute({ consent });
 }
 
 function render(): void {
@@ -138,7 +212,7 @@ function renderLaneSettings(): void {
   $('#laneSettings').innerHTML = visibleLanes().map((lane) => {
     const preference = preferences.lanes[lane];
     const defaultLabel = lane === 'center' ? 'Centre' : lane[0].toUpperCase() + lane.slice(1);
-    return `<div class="lane-setting"><label for="lane-label-${lane}">${laneMeta[lane].arrow} ${defaultLabel} lane label</label><input id="lane-label-${lane}" class="lane-label-input" data-label-lane="${lane}" value="${escapeText(preference.label)}" maxlength="24" autocomplete="off" /><button class="swatch-button" type="button" data-color-lane="${lane}" style="--swatch:${preference.color}" aria-label="Change ${escapeText(preference.label)} lane color" ${preference.locked ? 'disabled' : ''}></button><button class="lock-button" type="button" data-lock-lane="${lane}" aria-pressed="${preference.locked}">${preference.locked ? 'Locked' : 'Unlocked'}</button></div>`;
+    return `<div class="lane-setting"><label for="lane-label-${lane}">${laneMeta[lane].arrow} ${defaultLabel} lane label</label><input id="lane-label-${lane}" class="lane-label-input" data-label-lane="${lane}" value="${escapeText(preference.label)}" maxlength="24" autocomplete="off" /><button class="swatch-button" type="button" data-color-lane="${lane}" style="--swatch:${preference.color}" aria-label="Change ${escapeText(preference.label)} lane color" ${preference.locked ? 'disabled' : ''}></button><button class="lock-button" type="button" data-lock-lane="${lane}" aria-pressed="${preference.locked}">${preference.locked ? 'Unlock lane color' : 'Lock lane color'}</button></div>`;
   }).join('');
   $('#laneSettings').querySelectorAll<HTMLInputElement>('[data-label-lane]').forEach((input) => input.addEventListener('change', () => {
     const lane = input.dataset.labelLane as LaneId;
@@ -203,7 +277,7 @@ async function startRoom(practice = false): Promise<void> {
   }
   sessionMode = 'microphone';
   if (!speech.supported()) {
-    showMicError('On-device speech is not available in this browser. Use typed captions, or open the Android build on a supported device.');
+    showMicError('On-device speech is not available in this browser. Use typed captions instead.');
     return;
   }
   if (await speech.start()) await startDirectionAudio();
@@ -237,7 +311,7 @@ async function startDirectionAudio(): Promise<void> {
     }, 420);
   } catch (error) {
     const denied = error instanceof DOMException && error.name === 'NotAllowedError';
-    showMicError(denied ? 'Microphone permission was denied. Allow it in Android settings, or use typed captions.' : 'The microphone could not start. Check that another app is not using it.');
+    showMicError(denied ? 'Microphone permission was denied. Allow it in your device settings, or use typed captions.' : 'The microphone could not start. Check that another app is not using it.');
   }
 }
 
@@ -262,7 +336,10 @@ function exportTranscript(): void {
 }
 
 async function updateLicense(force = false): Promise<void> {
+  if (demoMode) return;
+  const routeAtStart = location.pathname;
   const result = await verifyLicense(force);
+  if (demoMode || location.pathname !== routeAtStart) return;
   plus = result.valid;
   const status = $('#licenseStatus');
   status.textContent = result.valid ? 'Plus is active on this device.' : result.reason === 'offline' ? 'Offline. Using the last verified license state.' : result.reason === 'missing' ? '' : 'This license is no longer active.';
@@ -270,6 +347,10 @@ async function updateLicense(force = false): Promise<void> {
 }
 
 function bindEvents(): void {
+  document.querySelector<HTMLAnchorElement>('.skip-link')?.addEventListener('click', (event) => {
+    event.preventDefault();
+    $('#main').focus();
+  });
   $('#consentForm').addEventListener('submit', (event) => { event.preventDefault(); void startRoom(false); });
   $('#openPractice').addEventListener('click', () => void startRoom(true));
   $('#typeForm').addEventListener('submit', (event) => {
@@ -290,7 +371,7 @@ function bindEvents(): void {
       });
     }
   });
-  $('#endButton').addEventListener('click', () => { stopAudio(); paused = false; sessionMode = null; setActiveViewHeadings(false); $('#room').hidden = true; $('#welcome').hidden = false; $('#welcome').scrollIntoView(); });
+  $('#endButton').addEventListener('click', () => { stopAudio(); paused = false; sessionMode = null; setActiveViewHeadings(false); $('#room').hidden = true; $('#welcome').hidden = false; $('#welcome').scrollIntoView(); $<HTMLHeadingElement>('#page-title').focus(); });
   $('#exportButton').addEventListener('click', exportTranscript);
   $('#openSettings').addEventListener('click', () => { renderLaneSettings(); $<HTMLDialogElement>('#settingsDialog').showModal(); });
   $('#openUpgrade').addEventListener('click', () => $<HTMLDialogElement>('#upgradeDialog').showModal());
@@ -350,22 +431,21 @@ function bindEvents(): void {
   });
   $('#startForReal').addEventListener('click', async () => {
     if (!demoMode) return;
-    await discardDemo();
-    location.assign('/#consent-panel');
+    await navigateApp(new URL('/#consent-panel', location.href));
   });
-  if (demoMode) {
-    document.querySelectorAll<HTMLAnchorElement>('a[href]').forEach((link) => link.addEventListener('click', async (event) => {
-      const target = new URL(link.href, location.href);
-      if (target.pathname === '/demo') return;
-      event.preventDefault();
-      await discardDemo();
-      location.assign(target.href);
-    }));
-    window.addEventListener('pagehide', () => {
+  document.querySelectorAll<HTMLAnchorElement>('a[href="/demo"], a[href="/?demo=1"]').forEach((link) => link.addEventListener('click', (event) => {
+    event.preventDefault();
+    void navigateApp(new URL('/demo', location.href));
+  }));
+  window.addEventListener('popstate', () => { void applyRoute({ consent: location.hash === '#consent-panel' }); });
+  window.addEventListener('pagehide', () => {
+    stopAudio();
+    if (demoMode) {
       localStorage.removeItem(preferencesKey);
       indexedDB.deleteDatabase(databaseName);
-    });
-  }
+    }
+  });
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') stopAudio(); });
   window.addEventListener('online', updateConnectivity); window.addEventListener('offline', updateConnectivity);
   window.addEventListener('keydown', (event) => {
     if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement || event.ctrlKey || event.metaKey || event.altKey) return;
@@ -375,6 +455,7 @@ function bindEvents(): void {
 
 function updateConnectivity(event?: Event): void {
   $('#offlineNotice').hidden = event?.type === 'offline' ? false : event?.type === 'online' ? true : navigator.onLine;
+  if (event?.type === 'online' && !demoMode) void updateLicense(true);
 }
 
 async function registerServiceWorker(): Promise<void> {
@@ -389,11 +470,8 @@ async function registerServiceWorker(): Promise<void> {
 }
 
 async function init(): Promise<void> {
+  history.replaceState({ appRoute: true }, '', location.href);
   if (demoMode) {
-    document.title = 'Demo — Caption Lanes';
-    document.querySelector<HTMLLinkElement>('link[rel="canonical"]')?.setAttribute('href', 'https://speaker-lane-captions.sociobot.in/demo');
-    document.querySelector<HTMLMetaElement>('meta[property="og:title"]')?.setAttribute('content', 'Demo — Caption Lanes');
-    document.querySelector<HTMLMetaElement>('meta[property="og:url"]')?.setAttribute('content', 'https://speaker-lane-captions.sociobot.in/demo');
     $('#demoBanner').hidden = false;
     Object.assign(preferences, structuredClone(defaultPreferences));
     localStorage.removeItem(preferencesKey);
@@ -404,6 +482,7 @@ async function init(): Promise<void> {
     plus = optimisticUnlock();
     captions = await loadCaptions(databaseName).catch(() => []);
   }
+  updateRouteMetadata();
   savePreferences();
   $<HTMLInputElement>('#captionSize').value = String(preferences.captionSize);
   $('#sizeOutput').textContent = `${preferences.captionSize} px`;

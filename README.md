@@ -2,15 +2,15 @@
 
 Caption Lanes places live captions into left, centre, and right lanes. It is for Deaf and hard-of-hearing people in small groups.
 
-The free app provides three lanes, local caption history, typed input, confidence filtering, and transcript import and export. Caption Lanes Plus costs $24 once and adds a fourth lane.
+The free app provides three lanes, a saved transcript, typed input, confidence filtering, and transcript import and export. Caption Lanes Plus costs $24 once and adds a fourth lane.
 
 Live product: <https://speaker-lane-captions.sociobot.in>
 
 ## Try the isolated demo
 
-Open <https://speaker-lane-captions.sociobot.in/demo> or select **Try it with sample data** on the landing page.
+Open <https://speaker-lane-captions.sociobot.in/demo>, add `?demo=1` to the home URL, or select **Try it with sample data**.
 
-The demo opens a six-caption conversation without a microphone. It uses the demo:caption-lanes storage namespace and never reads real captions or settings.
+The demo opens a six-caption conversation without a microphone. It keeps temporary data in a separate store named `demo:caption-lanes` and never reads real captions or settings.
 
 Use **Reset demo** to restore the sample. Use **Start for real** to clear the demo namespace and return to setup.
 
@@ -19,14 +19,14 @@ See [the demo contract](.factory/demo.md) for the sample and storage details.
 ## Privacy and capability boundaries
 
 - Everyone must agree before the app requests microphone access.
-- Speech requires the browser’s processLocally mode. The app refuses speech tools that cannot confirm local processing.
+- Live speech starts only when the browser confirms recognition runs on the device.
 - Caption Lanes never retains raw audio. Caption text and settings remain in the browser until the user clears them.
 - Direction is coarse, never identity. Stereo input can estimate left, centre, or right.
 - Mono devices show a limitation and keep the manual direction controls available.
 - Number keys 1–4 select a direction outside text fields.
 - Captions and direction can be wrong. Do not use this app for emergencies, medical decisions, legal records, or forensic work.
 
-Supported Chromium and Android versions need the on-device Web Speech API. Live speech also needs a downloaded language pack.
+Supported Chromium browsers may offer an on-device language pack. The app asks to install that pack before live speech starts.
 
 ## Develop and verify
 
@@ -65,7 +65,7 @@ Build and verify before deployment:
 npm ci
 npm test
 npm run build
-swa deploy ./dist --app-name sf-speaker-lane-captions --resource-group sociobot --env production
+swa deploy ./dist --app-name sf-speaker-lane-captions --env production
 npm run test:live
 ~~~
 
@@ -73,7 +73,9 @@ Azure Static Web Apps reads dist/staticwebapp.config.json. The factory owns DNS 
 
 ## Android project
 
-The Capacitor wrapper is in android/. Its app ID is in.sociobot.speakerlanecaptions.
+The Capacitor wrapper is in `android/`. Its app ID is `in.sociobot.speakerlanecaptions`.
+
+This work order prepares the Android project but does not publish an APK. A later Android work order must verify typed and microphone captions on a device.
 
 Refresh native web assets:
 
@@ -92,11 +94,11 @@ Release signing and distribution belong to a later Android work order. No keysto
 
 ## Paid license
 
-Checkout uses the Sociobot billing API. The app never embeds a payment provider.
+The buy link opens checkout hosted by Sociobot/Dodo. The app does not collect card details.
 
-The returned license uses sb_license:speaker-lane-captions. A valid check is reused for one day and reconciled when the device reconnects.
+The returned license uses `sb_license:speaker-lane-captions`. A valid check is reused for one day. The app checks the license again when the device reconnects.
 
-Users can paste a license on another device. Core captions, export, privacy, and accessibility controls remain free.
+Users can paste a license on another device. Typed captions, display controls, confidence filtering, and transcript export remain free.
 
 ## Project documentation
 

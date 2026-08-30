@@ -150,7 +150,7 @@ test('sends the demo flow only to its origin without microphone access @claim:lo
   await page.getByLabel(/Type a caption/).fill('Nothing leaves this demo.');
   await page.getByRole('button', { name: 'Add to lane' }).click();
   const downloadPromise = page.waitForEvent('download');
-  await page.getByRole('button', { name: 'Export' }).click();
+  await page.getByRole('button', { name: 'Export transcript' }).click();
   const download = await downloadPromise;
   const downloadPath = await download.path();
   const exported = JSON.parse(await readFile(downloadPath!, 'utf8')) as { rawAudioStored: boolean; captions: Record<string, unknown>[] };
@@ -198,7 +198,7 @@ test('does not retain microphone audio with a live speech fixture @claim:raw-aud
   expect(entries).toHaveLength(1);
   expect(Object.keys(entries[0]).sort().join(',')).toBe('confidence,createdAt,id,lane,source,text');
   const downloadPromise = page.waitForEvent('download');
-  await page.getByRole('button', { name: 'Export' }).click();
+  await page.getByRole('button', { name: 'Export transcript' }).click();
   const downloadPath = await (await downloadPromise).path();
   const exported = JSON.parse(await readFile(downloadPath!, 'utf8')) as { rawAudioStored: boolean };
   expect(exported.rawAudioStored).toBe(false);
@@ -241,7 +241,7 @@ test('keeps real captions and display settings after reload @claim:caption-persi
 test('exports and imports caption JSON @claim:transcript-portability', async ({ page }) => {
   await page.goto('/demo');
   const downloadPromise = page.waitForEvent('download');
-  await page.getByRole('button', { name: 'Export' }).click();
+  await page.getByRole('button', { name: 'Export transcript' }).click();
   const download = await downloadPromise;
   const path = await download.path();
   const exported = JSON.parse(await readFile(path!, 'utf8')) as { product: string; captions: unknown[] };
@@ -314,7 +314,7 @@ test('requires browser-confirmed local speech mode @claim:local-speech', async (
   expect(await page.evaluate(() => (window as typeof window & { __speechClaimState: { microphoneCalls: number } }).__speechClaimState.microphoneCalls)).toBe(0);
 
   await page.evaluate(() => { (window as typeof window & { __speechClaimState: { mode: string; captured: boolean } }).__speechClaimState.mode = 'supported'; });
-  await page.getByRole('button', { name: 'End' }).click();
+  await page.getByRole('button', { name: 'End captions' }).click();
   await page.getByRole('button', { name: 'Start captions' }).click();
   expect(await page.evaluate(() => (window as typeof window & { __speechClaimState: { captured: boolean } }).__speechClaimState.captured)).toBe(true);
 });
@@ -332,7 +332,7 @@ test('shows the $24 one-time Plus offer and caches a four-lane license daily @cl
   await page.getByRole('button', { name: 'View Plus details' }).click();
   await expect(page.getByRole('link', { name: 'Buy Caption Lanes Plus' })).toHaveAttribute('href', 'https://api.sociobot.in/api/v1/products/speaker-lane-captions/checkout');
   await page.getByLabel('Have a license? Paste it here.').fill('test-license');
-  await page.getByRole('button', { name: 'Restore' }).click();
+  await page.getByRole('button', { name: 'Restore license' }).click();
   await expect(page.getByText('Plus is active on this device.')).toBeVisible();
   await page.getByRole('button', { name: 'Close upgrade' }).click();
   await page.getByRole('button', { name: 'Explore with typed captions' }).click();
@@ -360,4 +360,242 @@ test('keeps the audience, action, and three facts inside the first viewport', as
   await action.click();
   await expect(page).toHaveURL(/\/demo$/);
   await expect(page.locator('.utterance')).toHaveCount(6);
+});
+
+test('waits for recorded consent before starting speech or microphone access @claim:consent-before-microphone', async ({ page }) => {
+  await page.addInitScript(() => {
+    const state = { recognitionStarts: 0, microphoneCalls: 0 };
+    Object.defineProperty(window, '__consentState', { value: state });
+    class Recognition extends EventTarget {
+      continuous = false; interimResults = false; lang = ''; processLocally = false;
+      onresult = null; onerror = null; onend = null;
+      static async available() { return 'available'; }
+      start() { state.recognitionStarts += 1; }
+      stop() {} abort() {}
+    }
+    const track = { getSettings: () => ({ channelCount: 1 }), stop() {} };
+    Object.defineProperty(window, 'SpeechRecognition', { configurable: true, value: Recognition });
+    Object.defineProperty(navigator, 'mediaDevices', { configurable: true, value: { getUserMedia: async () => {
+      state.microphoneCalls += 1;
+      return { getAudioTracks: () => [track], getTracks: () => [track] };
+    } } });
+  });
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Start captions' }).click();
+  expect(await page.evaluate(() => (window as typeof window & { __consentState: object }).__consentState)).toEqual({ recognitionStarts: 0, microphoneCalls: 0 });
+  await page.getByLabel('Everyone here agrees to live captions.').check();
+  await page.getByRole('button', { name: 'Start captions' }).click();
+  await expect.poll(() => page.evaluate(() => (window as typeof window & { __consentState: { microphoneCalls: number } }).__consentState.microphoneCalls)).toBe(1);
+  expect(await page.evaluate(() => (window as typeof window & { __consentState: { recognitionStarts: number } }).__consentState.recognitionStarts)).toBe(1);
+});
+
+test('stops microphone tracks on pause, end, navigation, background, and close @claim:microphone-lifecycle', async ({ page }) => {
+  await page.addInitScript(() => {
+    const state = { calls: 0, stops: 0 };
+    Object.defineProperty(window, '__lifecycleState', { value: state });
+    class Recognition extends EventTarget {
+      continuous = false; interimResults = false; lang = ''; processLocally = false;
+      onresult = null; onerror = null; onend = null;
+      static async available() { return 'available'; }
+      start() {} stop() {} abort() {}
+    }
+    Object.defineProperty(window, 'SpeechRecognition', { configurable: true, value: Recognition });
+    Object.defineProperty(navigator, 'mediaDevices', { configurable: true, value: { getUserMedia: async () => {
+      state.calls += 1;
+      const track = { getSettings: () => ({ channelCount: 1 }), stop: () => { state.stops += 1; } };
+      return { getAudioTracks: () => [track], getTracks: () => [track] };
+    } } });
+  });
+  await page.goto('/');
+  const start = async () => {
+    await page.getByLabel('Everyone here agrees to live captions.').check();
+    await page.getByRole('button', { name: 'Start captions' }).click();
+    await expect.poll(() => page.evaluate(() => (window as typeof window & { __lifecycleState: { calls: number } }).__lifecycleState.calls)).toBeGreaterThan(0);
+  };
+  await start();
+  await page.getByRole('button', { name: 'Pause' }).click();
+  await expect.poll(() => page.evaluate(() => (window as typeof window & { __lifecycleState: { stops: number } }).__lifecycleState.stops)).toBe(1);
+  await page.getByRole('button', { name: 'Resume' }).click();
+  await expect.poll(() => page.evaluate(() => (window as typeof window & { __lifecycleState: { calls: number } }).__lifecycleState.calls)).toBe(2);
+  await page.getByRole('button', { name: 'End captions' }).click();
+  await expect.poll(() => page.evaluate(() => (window as typeof window & { __lifecycleState: { stops: number } }).__lifecycleState.stops)).toBe(2);
+  await start();
+  await page.getByRole('link', { name: 'Demo' }).first().click();
+  await expect.poll(() => page.evaluate(() => (window as typeof window & { __lifecycleState: { stops: number } }).__lifecycleState.stops)).toBe(3);
+  await startForReal(page);
+  await start();
+  await page.evaluate(() => {
+    Object.defineProperty(document, 'visibilityState', { configurable: true, value: 'hidden' });
+    document.dispatchEvent(new Event('visibilitychange'));
+  });
+  await expect.poll(() => page.evaluate(() => (window as typeof window & { __lifecycleState: { stops: number } }).__lifecycleState.stops)).toBe(4);
+  await page.getByRole('button', { name: 'End captions' }).click();
+  await start();
+  await page.evaluate(() => window.dispatchEvent(new PageTransitionEvent('pagehide')));
+  await expect.poll(() => page.evaluate(() => (window as typeof window & { __lifecycleState: { stops: number } }).__lifecycleState.stops)).toBe(5);
+});
+
+test('uses no account, analytics, or archive service in demo, real typed, or licensed mode @claim:no-accounts-analytics-archive', async ({ page }) => {
+  const requests: string[] = [];
+  page.on('request', (request) => requests.push(request.url()));
+  await page.goto('/demo');
+  await page.getByLabel(/Type a caption/).fill('Demo privacy check');
+  await page.getByRole('button', { name: 'Add to lane' }).click();
+  await startForReal(page);
+  await page.getByRole('button', { name: 'Explore with typed captions' }).click();
+  await page.getByLabel(/Type a caption/).fill('Real privacy check');
+  await page.getByRole('button', { name: 'Add to lane' }).click();
+  await page.getByRole('button', { name: 'View Caption Lanes Plus' }).click();
+  await page.getByLabel('Have a license? Paste it here.').fill('privacy-fixture');
+  await page.getByRole('button', { name: 'Restore license' }).click();
+  await expect(page.getByText('This license is no longer active.')).toBeVisible();
+  const external = requests.filter((url) => new URL(url).origin !== origin);
+  expect(external).toHaveLength(1);
+  expect(external[0]).toMatch(/^https:\/\/api\.sociobot\.in\/api\/v1\/products\/speaker-lane-captions\/verify\?license=/);
+  await expect(page.locator('input[type="email"], input[name*="account" i]')).toHaveCount(0);
+});
+
+test('stores caption direction and text without identity or voiceprint fields @claim:no-identity-inference', async ({ page }) => {
+  await page.goto('/demo');
+  await page.getByLabel(/Type a caption/).fill('A direction is not a person');
+  await page.getByRole('button', { name: 'Add to lane' }).click();
+  const rows = await databaseEntries(page, 'demo:caption-lanes');
+  expect(rows).toHaveLength(7);
+  for (const row of rows) {
+    expect(Object.keys(row).sort()).toEqual(['confidence', 'createdAt', 'id', 'lane', 'source', 'text']);
+    expect(JSON.stringify(row)).not.toMatch(/identity|voiceprint|speakerId|personId/i);
+  }
+});
+
+test('shows the mono limitation while manual placement remains usable @claim:mono-input', async ({ page }) => {
+  await page.addInitScript(() => {
+    class Recognition extends EventTarget {
+      continuous = false; interimResults = false; lang = ''; processLocally = false;
+      onresult = null; onerror = null; onend = null;
+      static async available() { return 'available'; }
+      start() {} stop() {} abort() {}
+    }
+    const track = { getSettings: () => ({ channelCount: 1 }), stop() {} };
+    Object.defineProperty(window, 'SpeechRecognition', { configurable: true, value: Recognition });
+    Object.defineProperty(navigator, 'mediaDevices', { configurable: true, value: { getUserMedia: async () => ({ getAudioTracks: () => [track], getTracks: () => [track] }) } });
+  });
+  await page.goto('/');
+  await page.getByLabel('Everyone here agrees to live captions.').check();
+  await page.getByRole('button', { name: 'Start captions' }).click();
+  await expect(page.getByText(/one audio channel, so automatic direction is limited/)).toBeVisible();
+  await page.getByRole('button', { name: /→ Right shortcut 3/ }).click();
+  await page.getByLabel(/Type a caption/).fill('Placed on a mono device');
+  await page.getByRole('button', { name: 'Add to lane' }).click();
+  await expect(page.locator('.lane[data-id="right"]')).toContainText('Placed on a mono device');
+});
+
+test('installs a browser-offered on-device language pack before recognition @claim:language-pack-flow', async ({ page }) => {
+  await page.addInitScript(() => {
+    const state = { installed: false, started: false };
+    Object.defineProperty(window, '__languagePackState', { value: state });
+    class Recognition extends EventTarget {
+      continuous = false; interimResults = false; lang = ''; processLocally = false;
+      onresult = null; onerror = null; onend = null;
+      static async available() { return 'downloadable'; }
+      static async install() { state.installed = true; return true; }
+      start() { state.started = state.installed; } stop() {} abort() {}
+    }
+    Object.defineProperty(window, 'SpeechRecognition', { configurable: true, value: Recognition });
+    Object.defineProperty(navigator, 'mediaDevices', { configurable: true, value: { getUserMedia: async () => { throw new Error('stop after recognition'); } } });
+  });
+  await page.goto('/');
+  await page.getByLabel('Everyone here agrees to live captions.').check();
+  await page.getByRole('button', { name: 'Start captions' }).click();
+  await expect.poll(() => page.evaluate(() => (window as typeof window & { __languagePackState: { started: boolean } }).__languagePackState.started)).toBe(true);
+  expect(await page.evaluate(() => (window as typeof window & { __languagePackState: { installed: boolean } }).__languagePackState.installed)).toBe(true);
+});
+
+test('keeps typed captions, display controls, and transcript transfer free @claim:free-core-controls', async ({ page }) => {
+  await page.goto('/');
+  expect(await page.evaluate(() => localStorage.getItem('sb_license:speaker-lane-captions'))).toBeNull();
+  await page.getByRole('button', { name: 'Explore with typed captions' }).click();
+  await page.getByLabel(/Type a caption/).fill('Free caption');
+  await page.getByRole('button', { name: 'Add to lane' }).click();
+  await page.getByRole('button', { name: 'Open settings' }).click();
+  await page.getByLabel('Caption size 24 px').fill('32');
+  await page.getByLabel('Hide uncertain captions').check();
+  await page.getByRole('button', { name: 'Unlock lane color' }).first().click();
+  await expect(page.getByRole('button', { name: 'Lock lane color' }).first()).toBeVisible();
+  await page.getByRole('button', { name: 'Close settings' }).click();
+  const downloadPromise = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Export transcript' }).click();
+  const download = await downloadPromise;
+  const downloadPath = await download.path();
+  expect(downloadPath).not.toBeNull();
+  expect(JSON.parse(await readFile(downloadPath!, 'utf8'))).toBeTruthy();
+  await expect(page.locator('.lane')).toHaveCount(3);
+});
+
+test('restores one valid license in a fresh browser context @claim:license-portability', async ({ browser }) => {
+  for (let index = 0; index < 2; index += 1) {
+    const context = await browser.newContext();
+    const page = await context.newPage();
+    await page.route('https://api.sociobot.in/**', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: '{"valid":true,"reason":"ok"}' }));
+    await page.goto(origin);
+    await page.getByRole('button', { name: 'View Caption Lanes Plus' }).click();
+    await page.getByLabel('Have a license? Paste it here.').fill('portable-license');
+    await page.getByRole('button', { name: 'Restore license' }).click();
+    await expect(page.getByText('Plus is active on this device.')).toBeVisible();
+    await page.getByRole('button', { name: 'Close upgrade' }).click();
+    await page.getByRole('button', { name: 'Explore with typed captions' }).click();
+    await expect(page.locator('.lane')).toHaveCount(4);
+    await context.close();
+  }
+});
+
+test('rechecks a cached license when the device reconnects @claim:license-reconnect', async ({ page }) => {
+  let requests = 0;
+  await page.unroute('https://api.sociobot.in/**');
+  await page.route('https://api.sociobot.in/**', (route) => {
+    requests += 1;
+    return route.fulfill({ status: 200, contentType: 'application/json', body: '{"valid":false,"reason":"revoked"}' });
+  });
+  await page.addInitScript(() => {
+    localStorage.setItem('sb_license:speaker-lane-captions', 'cached-license');
+    localStorage.setItem('sb_license:speaker-lane-captions:verdict', JSON.stringify({ valid: true, checkedAt: Date.now() }));
+  });
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Explore with typed captions' }).click();
+  await expect(page.locator('.lane')).toHaveCount(4);
+  expect(requests).toBe(0);
+  await page.evaluate(() => window.dispatchEvent(new Event('online')));
+  await expect.poll(() => requests).toBe(1);
+  await expect(page.locator('.lane')).toHaveCount(3);
+});
+
+test('keeps card fields out of the app and redirects five buy requests to hosted checkout @claim:hosted-checkout', async ({ page, request }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'View Caption Lanes Plus' }).click();
+  await expect(page.locator('input[autocomplete="cc-number"], input[name*="card" i]')).toHaveCount(0);
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    const response = await request.get('https://api.sociobot.in/api/v1/products/speaker-lane-captions/checkout', { maxRedirects: 0 });
+    expect(response.status(), `checkout attempt ${attempt + 1}`).toBe(303);
+    expect(response.headers().location, `checkout attempt ${attempt + 1}`).toMatch(/^https:\/\/checkout\.dodopayments\.com\//);
+  }
+});
+
+test('removes Plus features after a recorded revoked verdict @claim:revoked-license', async ({ page }) => {
+  let valid = true;
+  await page.unroute('https://api.sociobot.in/**');
+  await page.route('https://api.sociobot.in/**', (route) => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({ valid, reason: valid ? 'ok' : 'revoked' })
+  }));
+  await page.goto('/');
+  await page.getByRole('button', { name: 'View Caption Lanes Plus' }).click();
+  await page.getByLabel('Have a license? Paste it here.').fill('later-revoked');
+  await page.getByRole('button', { name: 'Restore license' }).click();
+  await expect(page.getByText('Plus is active on this device.')).toBeVisible();
+  valid = false;
+  await page.evaluate(() => window.dispatchEvent(new Event('online')));
+  await expect(page.getByText('This license is no longer active.')).toBeVisible();
+  await page.getByRole('button', { name: 'Close upgrade' }).click();
+  await page.getByRole('button', { name: 'Explore with typed captions' }).click();
+  await expect(page.locator('.lane')).toHaveCount(3);
 });

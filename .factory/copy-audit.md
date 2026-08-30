@@ -38,9 +38,9 @@ This says what the product does, names its audience, and gives the first action 
 | No voiceprints or identity guesses | 5 | Pass |
 | Coarse direction, with confidence shown | 5 | Pass |
 | Everyone here agrees to live captions. | 6 | Pass |
-| The first start may ask Android to install a language pack. | 11 | Pass |
-| Direction depends on microphone layout; tap a direction whenever the estimate is uncertain. | 13 | Pass |
-| Follow the room in three steps | 6 | Pass |
+| A supported browser may ask to install its on-device language pack. | 10 | Pass |
+| Tap a direction whenever the estimate is uncertain. | 8 | Pass |
+| How to use Caption Lanes | 5 | Pass |
 | Caption Lanes requests microphone access only after everyone agrees. | 9 | Pass |
 | Set it near the middle. | 5 | Pass |
 | Stereo microphones estimate left, centre, or right. | 7 | Pass |
@@ -60,11 +60,11 @@ This says what the product does, names its audience, and gives the first action 
 | Typed captions remain available without microphone access. | 7 | Pass |
 | Plus costs $24 once. | 4 | Pass |
 | It adds an “Across” lane. | 5 | Pass |
-| Core captions, export, privacy, and accessibility controls stay free. | 9 | Pass |
+| Typed captions, display controls, confidence filtering, and transcript export stay free. | 10 | Pass |
 | Caption Lanes Plus adds a fourth “Across” lane. | 8 | Pass |
-| Core captions, privacy controls, accessibility, and export stay free. | 9 | Pass |
-| Secure hosted checkout. | 3 | Pass |
-| Sociobot/Dodo is the merchant of record; refunds are handled there and revoke the license. | 14 | Pass |
+| Typed captions, display controls, confidence filtering, and transcript export stay free. | 10 | Pass |
+| Sociobot/Dodo handles checkout and refunds. | 5 | Pass |
+| If checkout is unavailable, keep this dialog open and try again. | 10 | Pass |
 
 ## Product-room and footer phrases
 
@@ -80,8 +80,15 @@ All remaining labels are short interface phrases, not prose sentences. They are 
 | Number keys 1–4 also work. | 5 | Pass |
 | Hide uncertain captions | 3 | Pass |
 | Hides results below 60% recognition confidence. | 6 | Pass |
+| Export transcript | 2 | Pass |
+| End captions | 2 | Pass |
+| Unlock lane color | 3 | Pass |
+| Lock lane color | 3 | Pass |
+| View Caption Lanes Plus | 4 | Pass |
+| Add a fourth caption lane | 5 | Pass |
 | Have a license? | 3 | Pass |
 | Paste it here. | 3 | Pass |
+| Restore license | 2 | Pass |
 | Directional live captions for small, in-person groups. | 7 | Pass |
 | Environmental artwork was generated for this product. | 7 | Pass |
 

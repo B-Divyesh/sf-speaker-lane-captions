@@ -49,7 +49,7 @@ export class OnDeviceSpeech {
     const language = navigator.language || 'en-US';
     // Chromium's on-device mode. If unsupported, do not silently opt into server speech.
     if (!('processLocally' in recognition)) {
-      this.onError('This browser cannot guarantee on-device speech. Use typed captions or install the Android app on a supported device.');
+      this.onError('This browser cannot guarantee on-device speech. Use typed captions instead.');
       this.wanted = false;
       return false;
     }
@@ -88,7 +88,7 @@ export class OnDeviceSpeech {
     };
     recognition.onerror = (event) => {
       const messages: Record<string, string> = {
-        'not-allowed': 'Microphone permission was denied. Allow microphone access in Android settings, or use typed captions.',
+        'not-allowed': 'Microphone permission was denied. Allow microphone access in your device settings, or use typed captions.',
         'language-not-supported': 'The on-device language pack is not installed for this language.',
         'audio-capture': 'No microphone was found. Check the device microphone and try again.',
         network: 'On-device speech could not start. Install the language pack while online, then retry.'

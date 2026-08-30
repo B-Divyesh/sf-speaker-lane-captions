@@ -44,6 +44,7 @@
         <div><button class="demo-action" id="resetDemo" type="button">Reset demo</button><button class="demo-action primary" id="startForReal" type="button">Start for real</button></div>
       </aside>
 
+      <div class="visually-hidden" id="routeAnnouncement" role="status" aria-live="polite"></div>
       <main id="main" tabindex="-1">
         <div class="notice global-notice" id="offlineNotice" role="status" hidden><strong>You’re offline.</strong> Captions keep working if the on-device language pack is installed.</div>
         <section class="welcome" id="welcome" aria-labelledby="page-title">
@@ -54,7 +55,7 @@
             </picture>
             <div class="hero-copy">
               <p class="eyebrow">Directional captions for small groups</p>
-              <h1 id="page-title">Place live captions by speaker direction.</h1>
+              <h1 id="page-title" tabindex="-1">Place live captions by speaker direction.</h1>
               <p class="lede">For Deaf and hard-of-hearing people who need to follow small, in-person conversations.</p>
               <div class="hero-actions"><a class="primary-button button-link" href="/demo">Try it with sample data</a><a class="secondary-button button-link" href="#consent-panel">Start real captions</a></div>
               <p class="action-note">The demo opens a saved sample conversation. No microphone is used.</p>
@@ -81,13 +82,13 @@
               <label class="consent-check"><input id="consent" type="checkbox" required /> <span>Everyone here agrees to live captions.</span></label>
               <button class="primary-button" type="submit"><span aria-hidden="true">●</span> Start captions</button>
               <button class="text-button" id="openPractice" type="button">Explore with typed captions</button>
-              <p class="fine-print">The first start may ask Android to install a language pack. Direction depends on microphone layout; tap a direction whenever the estimate is uncertain.</p>
+              <p class="fine-print">A supported browser may ask to install its on-device language pack. Tap a direction whenever the estimate is uncertain.</p>
             </form>
           </div>
 
           <section class="explain-section" id="how-it-works" aria-labelledby="how-title">
             <p class="step">How it works</p>
-            <h2 id="how-title">Follow the room in three steps</h2>
+            <h2 id="how-title">How to use Caption Lanes</h2>
             <ol class="how-list">
               <li><span>1</span><div><h3>Ask the group</h3><p>Caption Lanes requests microphone access only after everyone agrees.</p></div></li>
               <li><span>2</span><div><h3>Place the phone</h3><p>Set it near the middle. Stereo microphones estimate left, centre, or right.</p></div></li>
@@ -107,7 +108,7 @@
           </section>
 
           <section class="explain-section plus-section" aria-labelledby="plus-title">
-            <div><p class="step">Caption Lanes Plus</p><h2 id="plus-title">Add a fourth lane</h2><p>Plus costs $24 once. It adds an “Across” lane. Core captions, export, privacy, and accessibility controls stay free.</p></div>
+            <div><p class="step">Caption Lanes Plus</p><h2 id="plus-title">Add a fourth lane</h2><p>Plus costs $24 once. It adds an “Across” lane. Typed captions, display controls, confidence filtering, and transcript export stay free.</p></div>
             <button class="primary-button" id="openUpgradePlan" type="button" aria-label="View Plus details">View Plus details</button>
           </section>
         </section>
@@ -120,8 +121,8 @@
             </div>
             <div class="session-actions">
               <button class="secondary-button" id="pauseButton" type="button"><span aria-hidden="true">Ⅱ</span> Pause</button>
-              <button class="secondary-button" id="exportButton" type="button">Export</button>
-              <button class="danger-button" id="endButton" type="button">End</button>
+              <button class="secondary-button" id="exportButton" type="button">Export transcript</button>
+              <button class="danger-button" id="endButton" type="button">End captions</button>
             </div>
           </div>
 
@@ -144,8 +145,8 @@
 
       <footer>
         <p>Directional live captions for small, in-person groups.</p>
-        <nav aria-label="Footer navigation"><a href="/demo">Demo</a><a href="/privacy/">Privacy</a><a href="/terms/">Terms</a><button class="footer-link" id="openUpgrade" type="button">Caption Lanes Plus</button></nav>
-        <p class="factory-note">Built by Param Factory · v1.0.0 · repair 5</p>
+        <nav aria-label="Footer navigation"><a href="/demo">Demo</a><a href="/privacy/">Privacy</a><a href="/terms/">Terms</a><button class="footer-link" id="openUpgrade" type="button">View Caption Lanes Plus</button></nav>
+        <p class="factory-note">Built by Param Factory · v1.0.0 · polish 1</p>
         <p class="generated-note">Environmental artwork was generated for this product.</p>
       </footer>
     </div>
@@ -162,13 +163,13 @@
     </dialog>
 
     <dialog id="upgradeDialog" aria-labelledby="upgrade-title">
-      <form method="dialog" class="sheet-head"><div><p class="step">One-time purchase</p><h2 id="upgrade-title">Make room for four</h2></div><button class="icon-button" aria-label="Close upgrade">×</button></form>
+      <form method="dialog" class="sheet-head"><div><p class="step">One-time purchase</p><h2 id="upgrade-title">Add a fourth caption lane</h2></div><button class="icon-button" aria-label="Close upgrade">×</button></form>
       <div class="sheet-body upgrade-body">
         <p class="price">$24 <span>once</span></p>
-        <p>Caption Lanes Plus adds a fourth “Across” lane. Core captions, privacy controls, accessibility, and export stay free.</p>
-        <a class="primary-button button-link" href="https://api.sociobot.in/api/v1/products/speaker-lane-captions/checkout">Buy Caption Lanes Plus</a>
-        <p class="fine-print">Secure hosted checkout. Sociobot/Dodo is the merchant of record; refunds are handled there and revoke the license.</p>
-        <form id="restoreForm" class="restore-form"><label for="licenseInput">Have a license? Paste it here.</label><div><input id="licenseInput" type="text" autocomplete="off" spellcheck="false" /><button class="secondary-button" type="submit">Restore</button></div><p id="licenseStatus" role="status"></p></form>
+        <p>Caption Lanes Plus adds a fourth “Across” lane. Typed captions, display controls, confidence filtering, and transcript export stay free.</p>
+        <a class="primary-button button-link" href="https://api.sociobot.in/api/v1/products/speaker-lane-captions/checkout" target="_blank" rel="noopener">Buy Caption Lanes Plus <span class="visually-hidden">(opens hosted checkout in a new tab)</span></a>
+        <p class="fine-print">Sociobot/Dodo handles checkout and refunds. If checkout is unavailable, keep this dialog open and try again.</p>
+        <form id="restoreForm" class="restore-form"><label for="licenseInput">Have a license? Paste it here.</label><div><input id="licenseInput" type="text" autocomplete="off" spellcheck="false" /><button class="secondary-button" type="submit">Restore license</button></div><p id="licenseStatus" role="status"></p></form>
         <p><a href="/privacy/">Privacy</a> · <a href="/terms/">Terms</a></p>
       </div>
     </dialog>
