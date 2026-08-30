@@ -1,4 +1,20 @@
-# Caption Lanes — repair 5 handoff
+# Caption Lanes — verification 6 handoff
+
+## Verification 6 result — PASS
+
+Candidate `345af62283c9cb2138d78566316e5a2217300ec1` is a verified **PASS** at
+<https://speaker-lane-captions.sociobot.in/>. All twelve declared claim tests,
+the 5-unit/54-browser full suite, production build, live artifact comparison,
+offline demo reload, live axe scans, header checks, and Lighthouse passed.
+
+See `.factory/verification-6.md` for exact evidence and defects by severity.
+The only environment limitation is that this worker lacks Java, preventing
+`./gradlew assembleDebug`; Capacitor sync and Doctor pass. Android device/APK
+smoke testing and the brief's human attribution study remain external follow-up.
+
+---
+
+# Caption Lanes — repair 5 handoff (superseded by verification 6)
 
 Date: 2026-08-30 UTC
 
