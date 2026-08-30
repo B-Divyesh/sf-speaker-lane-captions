@@ -3,8 +3,8 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
 const dist = new URL('../dist/', import.meta.url);
-const htmlFiles = ['index.html', 'privacy/index.html', 'terms/index.html', 'offline.html'];
-const shell = new Set(['/', '/?v=2&source=installed', '/offline.html', '/privacy/', '/terms/', '/manifest.webmanifest', '/favicon.ico']);
+const htmlFiles = ['index.html', 'privacy/index.html', 'terms/index.html', 'offline.html', '404.html'];
+const shell = new Set(['/', '/demo', '/?v=2&source=installed', '/offline.html', '/privacy/', '/terms/', '/manifest.webmanifest', '/favicon.svg', '/favicon.ico']);
 
 for (const file of htmlFiles) {
   const html = await readFile(new URL(file, dist), 'utf8');
@@ -17,7 +17,7 @@ const files = [...shell].sort();
 const revisionHash = createHash('sha256');
 for (const url of files) {
   const pathname = url.split('?')[0];
-  const file = pathname === '/' ? 'index.html' : pathname.endsWith('/') ? `${pathname.slice(1)}index.html` : pathname.slice(1);
+  const file = pathname === '/' || pathname === '/demo' ? 'index.html' : pathname.endsWith('/') ? `${pathname.slice(1)}index.html` : pathname.slice(1);
   revisionHash.update(url).update(await readFile(new URL(file, dist)));
 }
 const revision = revisionHash.digest('hex').slice(0, 12);

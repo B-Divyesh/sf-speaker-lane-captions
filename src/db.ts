@@ -3,9 +3,9 @@ import type { CaptionEntry } from './types';
 const DB_NAME = 'caption-lanes';
 const STORE = 'captions';
 
-function openDatabase(): Promise<IDBDatabase> {
+function openDatabase(databaseName: string): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
-    const request = indexedDB.open(DB_NAME, 1);
+    const request = indexedDB.open(databaseName, 1);
     request.onupgradeneeded = () => {
       const db = request.result;
       if (!db.objectStoreNames.contains(STORE)) db.createObjectStore(STORE, { keyPath: 'id' });
@@ -22,16 +22,16 @@ function requestResult<T>(request: IDBRequest<T>): Promise<T> {
   });
 }
 
-export async function loadCaptions(): Promise<CaptionEntry[]> {
-  const db = await openDatabase();
+export async function loadCaptions(databaseName = DB_NAME): Promise<CaptionEntry[]> {
+  const db = await openDatabase(databaseName);
   const transaction = db.transaction(STORE, 'readonly');
   const entries = await requestResult(transaction.objectStore(STORE).getAll() as IDBRequest<CaptionEntry[]>);
   db.close();
   return entries.sort((a, b) => a.createdAt.localeCompare(b.createdAt));
 }
 
-export async function saveCaption(entry: CaptionEntry): Promise<void> {
-  const db = await openDatabase();
+export async function saveCaption(entry: CaptionEntry, databaseName = DB_NAME): Promise<void> {
+  const db = await openDatabase(databaseName);
   const transaction = db.transaction(STORE, 'readwrite');
   transaction.objectStore(STORE).put(entry);
   await new Promise<void>((resolve, reject) => {
@@ -41,8 +41,8 @@ export async function saveCaption(entry: CaptionEntry): Promise<void> {
   db.close();
 }
 
-export async function replaceCaptions(entries: CaptionEntry[]): Promise<void> {
-  const db = await openDatabase();
+export async function replaceCaptions(entries: CaptionEntry[], databaseName = DB_NAME): Promise<void> {
+  const db = await openDatabase(databaseName);
   const transaction = db.transaction(STORE, 'readwrite');
   const store = transaction.objectStore(STORE);
   store.clear();
@@ -54,6 +54,6 @@ export async function replaceCaptions(entries: CaptionEntry[]): Promise<void> {
   db.close();
 }
 
-export async function clearCaptions(): Promise<void> {
-  return replaceCaptions([]);
+export async function clearCaptions(databaseName = DB_NAME): Promise<void> {
+  return replaceCaptions([], databaseName);
 }

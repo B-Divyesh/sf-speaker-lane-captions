@@ -5,6 +5,9 @@ import { OnDeviceSpeech } from './speech';
 import type { CaptionEntry, LaneId, Preferences } from './types';
 
 const $ = <T extends HTMLElement>(selector: string) => document.querySelector<T>(selector)!;
+const demoMode = location.pathname.replace(/\/+$/, '') === '/demo' || new URLSearchParams(location.search).get('demo') === '1';
+const databaseName = demoMode ? 'demo:caption-lanes' : 'caption-lanes';
+const preferencesKey = demoMode ? 'demo:caption-lanes:preferences' : 'caption-lanes:preferences';
 const laneOrder: LaneId[] = ['left', 'center', 'right', 'across'];
 const laneMeta: Record<LaneId, { arrow: string; empty: string }> = {
   left: { arrow: '←', empty: 'Speech from your left will gather here.' },
@@ -23,6 +26,14 @@ const defaultPreferences: Preferences = {
     across: { label: 'Across', color: '#a8c97f', locked: true }
   }
 };
+const demoCaptions: CaptionEntry[] = [
+  { id: 'demo-1', lane: 'left', text: 'Should we move the chairs closer?', confidence: .88, createdAt: '2026-08-30T18:02:00.000Z', source: 'speech' },
+  { id: 'demo-2', lane: 'center', text: 'This distance works well for me.', confidence: .91, createdAt: '2026-08-30T18:02:08.000Z', source: 'speech' },
+  { id: 'demo-3', lane: 'right', text: 'I can turn down the music too.', confidence: .83, createdAt: '2026-08-30T18:02:17.000Z', source: 'speech' },
+  { id: 'demo-4', lane: 'left', text: 'Yes, then let’s plan Saturday lunch.', confidence: .79, createdAt: '2026-08-30T18:02:26.000Z', source: 'speech' },
+  { id: 'demo-5', lane: 'center', text: 'Noon works. I will book the table.', confidence: .86, createdAt: '2026-08-30T18:02:35.000Z', source: 'speech' },
+  { id: 'demo-6', lane: 'right', text: 'Please choose somewhere quiet.', confidence: .9, createdAt: '2026-08-30T18:02:43.000Z', source: 'speech' }
+];
 
 const preferences = loadPreferences();
 let captions: CaptionEntry[] = [];
@@ -43,7 +54,7 @@ const speech = new OnDeviceSpeech(addSpeechCaption, showMicError, (listening) =>
 
 function loadPreferences(): Preferences {
   try {
-    const stored = JSON.parse(localStorage.getItem('caption-lanes:preferences') || '') as Partial<Preferences>;
+    const stored = JSON.parse(localStorage.getItem(preferencesKey) || '') as Partial<Preferences>;
     return {
       ...defaultPreferences,
       ...stored,
@@ -53,8 +64,14 @@ function loadPreferences(): Preferences {
 }
 
 function savePreferences(): void {
-  localStorage.setItem('caption-lanes:preferences', JSON.stringify(preferences));
+  localStorage.setItem(preferencesKey, JSON.stringify(preferences));
   document.documentElement.style.setProperty('--caption-size', `${preferences.captionSize}px`);
+}
+
+async function discardDemo(): Promise<void> {
+  if (!demoMode) return;
+  await clearCaptions(databaseName);
+  localStorage.removeItem(preferencesKey);
 }
 
 function visibleLanes(): LaneId[] {
@@ -154,7 +171,7 @@ async function addCaption(text: string, confidence: number | null, source: 'spee
     createdAt: new Date().toISOString(), source
   };
   captions.push(entry);
-  await saveCaption(entry);
+  await saveCaption(entry, databaseName);
   render();
   const lane = $<HTMLElement>(`.lane[data-id="${activeLane}"]`);
   lane?.querySelector('.utterances')?.scrollTo({ top: 99999, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
@@ -174,14 +191,14 @@ async function startRoom(practice = false): Promise<void> {
   setActiveViewHeadings(true);
   $('#welcome').hidden = true;
   $('#room').hidden = false;
-  $('#room').scrollIntoView({ block: 'start' });
+  if (!demoMode) $('#room').scrollIntoView({ block: 'start' });
   render();
   if (practice) {
     sessionMode = 'typed';
     paused = false;
     $('#room-status').textContent = 'Typed-caption mode · microphone is off';
     showMicError('Typed-caption mode is active. Choose a direction, then type each utterance below.');
-    $('#typedCaption').focus();
+    if (!demoMode) $('#typedCaption').focus();
     return;
   }
   sessionMode = 'microphone';
@@ -277,11 +294,12 @@ function bindEvents(): void {
   $('#exportButton').addEventListener('click', exportTranscript);
   $('#openSettings').addEventListener('click', () => { renderLaneSettings(); $<HTMLDialogElement>('#settingsDialog').showModal(); });
   $('#openUpgrade').addEventListener('click', () => $<HTMLDialogElement>('#upgradeDialog').showModal());
+  $('#openUpgradePlan').addEventListener('click', () => $<HTMLDialogElement>('#upgradeDialog').showModal());
   $('#captionSize').addEventListener('input', (event) => { preferences.captionSize = Number((event.target as HTMLInputElement).value); $('#sizeOutput').textContent = `${preferences.captionSize} px`; savePreferences(); });
   $('#hideUncertain').addEventListener('change', (event) => { preferences.hideUncertain = (event.target as HTMLInputElement).checked; savePreferences(); render(); });
   $('#clearButton').addEventListener('click', async () => {
     if (!confirm(`Clear ${captions.length} saved caption${captions.length === 1 ? '' : 's'} from this device?`)) return;
-    await clearCaptions(); captions = []; render(); toast('Transcript cleared.');
+    await clearCaptions(databaseName); captions = []; render(); toast('Transcript cleared.');
   });
   $('#importButton').addEventListener('click', () => $<HTMLInputElement>('#importFile').click());
   $('#importFile').addEventListener('change', async (event) => {
@@ -305,7 +323,7 @@ function bindEvents(): void {
       return;
     }
     try {
-      await replaceCaptions(entries);
+      await replaceCaptions(entries, databaseName);
       captions = entries;
       render();
       toast(`${entries.length} captions imported.`);
@@ -315,8 +333,39 @@ function bindEvents(): void {
   });
   $('#restoreForm').addEventListener('submit', (event) => {
     event.preventDefault(); const input = $<HTMLInputElement>('#licenseInput');
+    if (demoMode) { toast('Start for real before restoring a license.'); return; }
     if (!input.value.trim()) return; storeLicense(input.value); $('#licenseStatus').textContent = 'Checking license…'; void updateLicense(true);
   });
+  $('#resetDemo').addEventListener('click', async () => {
+    if (!demoMode) return;
+    Object.assign(preferences, structuredClone(defaultPreferences));
+    localStorage.removeItem(preferencesKey);
+    savePreferences();
+    captions = structuredClone(demoCaptions);
+    await replaceCaptions(captions, databaseName);
+    activeLane = 'center';
+    render(); renderLaneSettings();
+    toast('Sample conversation reset.');
+    $<HTMLHeadingElement>('#room-title').focus();
+  });
+  $('#startForReal').addEventListener('click', async () => {
+    if (!demoMode) return;
+    await discardDemo();
+    location.assign('/#consent-panel');
+  });
+  if (demoMode) {
+    document.querySelectorAll<HTMLAnchorElement>('a[href]').forEach((link) => link.addEventListener('click', async (event) => {
+      const target = new URL(link.href, location.href);
+      if (target.pathname === '/demo') return;
+      event.preventDefault();
+      await discardDemo();
+      location.assign(target.href);
+    }));
+    window.addEventListener('pagehide', () => {
+      localStorage.removeItem(preferencesKey);
+      indexedDB.deleteDatabase(databaseName);
+    });
+  }
   window.addEventListener('online', updateConnectivity); window.addEventListener('offline', updateConnectivity);
   window.addEventListener('keydown', (event) => {
     if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement || event.ctrlKey || event.metaKey || event.altKey) return;
@@ -340,15 +389,29 @@ async function registerServiceWorker(): Promise<void> {
 }
 
 async function init(): Promise<void> {
-  captureReturnedLicense();
-  plus = optimisticUnlock();
+  if (demoMode) {
+    document.title = 'Demo — Caption Lanes';
+    document.querySelector<HTMLLinkElement>('link[rel="canonical"]')?.setAttribute('href', 'https://speaker-lane-captions.sociobot.in/demo');
+    document.querySelector<HTMLMetaElement>('meta[property="og:title"]')?.setAttribute('content', 'Demo — Caption Lanes');
+    document.querySelector<HTMLMetaElement>('meta[property="og:url"]')?.setAttribute('content', 'https://speaker-lane-captions.sociobot.in/demo');
+    $('#demoBanner').hidden = false;
+    Object.assign(preferences, structuredClone(defaultPreferences));
+    localStorage.removeItem(preferencesKey);
+    captions = structuredClone(demoCaptions);
+    await replaceCaptions(captions, databaseName);
+  } else {
+    captureReturnedLicense();
+    plus = optimisticUnlock();
+    captions = await loadCaptions(databaseName).catch(() => []);
+  }
   savePreferences();
   $<HTMLInputElement>('#captionSize').value = String(preferences.captionSize);
   $('#sizeOutput').textContent = `${preferences.captionSize} px`;
   $<HTMLInputElement>('#hideUncertain').checked = preferences.hideUncertain;
-  captions = await loadCaptions().catch(() => []);
   bindEvents(); render(); renderLaneSettings(); updateConnectivity();
-  void updateLicense(); void registerServiceWorker();
+  if (demoMode) await startRoom(true);
+  else void updateLicense();
+  void registerServiceWorker();
 }
 
 void init();

@@ -59,3 +59,5 @@ One original cinematic environmental illustration will be generated for the cons
 - **Negative list:** no text, no captions, no UI, no logo, no watermark, no people, no faces, no microphones, no phones, no neon cyberpunk, no generic gradient, no brand symbols
 
 **Generation record:** Azure OpenAI factory image deployment via `/opt/fleet/lib/gen-image.sh`; generated 2026-08-28. Final prompt is stored beside the source image in `assets/src/room-table.json`. Generated imagery is original for Caption Lanes and disclosed in the footer.
+
+The 1200 × 630 social preview at `public/assets/social-1200x630.webp` is a centre crop of that same original image. It adds no new generated or third-party material.

@@ -1,0 +1,86 @@
+[
+  {
+    "id": "demo-isolation",
+    "claim": "The sample demo opens in one click and stays separate from real captions and settings.",
+    "where": "landing action, demo banner, privacy page, README",
+    "test": "npm run test:e2e -- --grep @claim:demo-isolation",
+    "sandbox": "fresh browser context; seed real IndexedDB data; exercise, reset, and leave /demo; compare both storage namespaces"
+  },
+  {
+    "id": "directional-lanes",
+    "claim": "Caption Lanes separates captions into left, centre, and right lanes with manual keyboard placement.",
+    "where": "landing page, product room, README",
+    "test": "npm run test:e2e -- --grep @claim:directional-lanes",
+    "sandbox": "fresh /demo sample; assert all three lanes and place a typed caption with the number-key control"
+  },
+  {
+    "id": "stereo-direction",
+    "claim": "A stereo microphone can provide a coarse left, centre, or right hint, and its audio track stops when captions pause.",
+    "where": "How it works, consent, README",
+    "test": "npm run test:e2e -- --grep @claim:stereo-direction",
+    "sandbox": "enter the real flow from /demo with recorded stereo analyser samples; assert the left hint, strong label, and stopped track"
+  },
+  {
+    "id": "local-privacy",
+    "claim": "The caption demo sends no data to another origin and never requests microphone access.",
+    "where": "demo banner, privacy page, README",
+    "test": "npm run test:e2e -- --grep @claim:local-privacy",
+    "sandbox": "fresh /demo; record every request; add and export a caption; inspect the request origins and microphone call count"
+  },
+  {
+    "id": "raw-audio-storage",
+    "claim": "Caption Lanes never retains raw microphone audio; only caption fields are stored and exported.",
+    "where": "landing facts, consent, privacy page, README",
+    "test": "npm run test:e2e -- --grep @claim:raw-audio-storage",
+    "sandbox": "enter the real flow from /demo with recorded speech and mono-stream fixtures; assert no MediaRecorder use, stopped track, IndexedDB fields, and export flag"
+  },
+  {
+    "id": "offline-reload",
+    "claim": "The installed app opens offline after one online visit.",
+    "where": "landing facts, privacy page, README",
+    "test": "npm run test:e2e -- --grep @claim:offline-reload",
+    "sandbox": "new browser context at /demo; install and control the service worker; set context offline; reload the exact demo URL"
+  },
+  {
+    "id": "caption-persistence",
+    "claim": "Real caption text and display settings stay in the browser across reloads until cleared.",
+    "where": "privacy section, privacy page, README",
+    "test": "npm run test:e2e -- --grep @claim:caption-persistence",
+    "sandbox": "fresh /demo; choose Start for real; add a caption; reload; reopen typed captions"
+  },
+  {
+    "id": "transcript-portability",
+    "claim": "Users can export and import caption text as JSON.",
+    "where": "How it works, Settings, privacy page, README",
+    "test": "npm run test:e2e -- --grep @claim:transcript-portability",
+    "sandbox": "fresh /demo sample; parse the downloaded JSON; import a replacement fixture and assert visible rows"
+  },
+  {
+    "id": "typed-limit",
+    "claim": "Typed captions ignore blank input and stop at 240 characters.",
+    "where": "caption input",
+    "test": "npm run test:e2e -- --grep @claim:typed-limit",
+    "sandbox": "fresh /demo; submit spaces; enter 241 characters; assert zero blank rows and an exact 240-character value"
+  },
+  {
+    "id": "confidence-filter",
+    "claim": "Hide uncertain captions removes results below 60 percent confidence and keeps the 60 percent boundary.",
+    "where": "Settings",
+    "test": "npm run test:e2e -- --grep @claim:confidence-filter",
+    "sandbox": "fresh /demo; import recorded 0.59 and 0.60 fixtures; enable the filter and compare visible captions"
+  },
+  {
+    "id": "local-speech",
+    "claim": "Live speech requires browser-confirmed on-device processing and remains optional because typed captions work without it.",
+    "where": "consent, privacy page, README",
+    "test": "npm run test:e2e -- --grep @claim:local-speech",
+    "sandbox": "enter the real flow from /demo with recorded browser speech fixtures; reject missing processLocally support and assert true when supported"
+  },
+  {
+    "id": "plus-license",
+    "claim": "Caption Lanes Plus costs $24 once, adds a fourth lane, and reuses a valid verification for one day.",
+    "where": "landing facts, paid section, terms, README",
+    "test": "npm run test:e2e -- --grep @claim:plus-license",
+    "sandbox": "fresh /demo; enter real mode with a recorded valid verification; assert price, checkout URL, four lanes, and one request across reload"
+  }
+]

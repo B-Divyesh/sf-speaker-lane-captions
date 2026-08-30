@@ -10,6 +10,18 @@ const root = await fetch(`${origin}/`, { cache: 'no-store' });
 const rootText = await root.text();
 check(root.status === 200, `root returned ${root.status}`);
 check(rootText.includes('<title>Caption Lanes'), 'live root is not Caption Lanes');
+check(rootText.includes('rel="canonical" href="https://speaker-lane-captions.sociobot.in/"'), 'live root is missing its canonical URL');
+check(rootText.includes('property="og:image"') && rootText.includes('name="twitter:card"'), 'live root is missing social metadata');
+
+const demo = await fetch(`${origin}/demo`, { cache: 'no-store' });
+const demoText = await demo.text();
+check(demo.status === 200, `demo returned ${demo.status}`);
+check(demoText.includes('Try it with sample data'), 'demo route did not receive the app shell');
+
+const missing = await fetch(`${origin}/does-not-exist-repair-5`, { cache: 'no-store' });
+const missingText = await missing.text();
+check(missing.status === 404, `unknown route returned ${missing.status}, expected 404`);
+check(missingText.includes('This caption lane ends here.'), 'unknown route did not receive the designed 404 page');
 
 const favicon = await fetch(`${origin}/favicon.ico`, { cache: 'no-store' });
 check(favicon.status === 200, `favicon returned ${favicon.status}`);

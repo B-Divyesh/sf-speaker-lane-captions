@@ -13,7 +13,7 @@ test('runs the typed directional caption flow and passes axe', async ({ page }) 
   expect(favicon.status()).toBe(200);
   expect(favicon.headers()['content-type']).toMatch(/^image\//);
   await expect(page).toHaveTitle(/Caption Lanes/);
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Know where every caption came from.');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Place live captions by speaker direction.');
   const results = await new AxeBuilder({ page }).analyze();
   expect(results.violations.filter((violation) => ['serious', 'critical'].includes(violation.impact || ''))).toEqual([]);
 
@@ -140,6 +140,36 @@ test('all visible mobile controls have at least 44px touch targets', async ({ pa
   expect(await page.locator('body').evaluate((body) => body.scrollWidth <= innerWidth)).toBe(true);
 });
 
+test('supports skip navigation and returns focus after a keyboard-closed dialog', async ({ page }) => {
+  await page.goto('/');
+  await page.keyboard.press('Tab');
+  await expect(page.locator('.skip-link')).toBeFocused();
+  await page.keyboard.press('Enter');
+  await expect(page.locator('main')).toBeFocused();
+
+  const settings = page.getByRole('button', { name: 'Open settings' });
+  await settings.focus();
+  await page.keyboard.press('Enter');
+  await expect(page.getByRole('dialog', { name: 'Caption settings' })).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('dialog', { name: 'Caption settings' })).toBeHidden();
+  await expect(settings).toBeFocused();
+});
+
+test('respects reduced motion and reflows at 320px', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.setViewportSize({ width: 320, height: 844 });
+  await page.goto('/demo');
+  await expect(page.locator('.utterance').first()).toBeVisible();
+  expect(await page.locator('.utterance').first().evaluate((element) => getComputedStyle(element).animationDuration)).toBe('1e-05s');
+  expect(await page.locator('body').evaluate((body) => body.scrollWidth <= innerWidth)).toBe(true);
+  await page.getByRole('button', { name: 'Open settings' }).click();
+  expect(await page.locator('body').evaluate((body) => body.scrollWidth <= innerWidth)).toBe(true);
+  await page.getByRole('button', { name: 'Close settings' }).click();
+  await page.getByRole('button', { name: 'Caption Lanes Plus' }).click();
+  expect(await page.locator('body').evaluate((body) => body.scrollWidth <= innerWidth)).toBe(true);
+});
+
 test('Plus uses the registered Sociobot hosted checkout', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: 'Caption Lanes Plus' }).click();
@@ -168,7 +198,7 @@ test('reloads the app shell offline after installation', async ({ page, context 
   await expect(page.getByText('You’re offline.')).toBeVisible();
 });
 
-test('opens the exact unvisited installed start URL offline after installation @claim:offline-installed-start-url', async ({ browser }) => {
+test('opens the exact unvisited installed start URL offline after installation', async ({ browser }) => {
   const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
   const page = await context.newPage();
   try {
@@ -181,8 +211,8 @@ test('opens the exact unvisited installed start URL offline after installation @
 
     await context.setOffline(true);
     await page.goto('http://127.0.0.1:4173/?v=2&source=installed', { waitUntil: 'domcontentloaded' });
-    await expect(page).toHaveTitle('Caption Lanes — Know where each caption came from');
-    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Know where every caption came from.');
+    await expect(page).toHaveTitle('Caption Lanes — Place captions by speaker direction');
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Place live captions by speaker direction.');
     await expect(page.getByRole('button', { name: 'Explore with typed captions' })).toBeVisible();
   } finally {
     await context.close();
@@ -198,14 +228,15 @@ test('the active room has one visible level-one heading and no axe violations', 
   const results = await new AxeBuilder({ page }).analyze();
   expect(results.violations).toEqual([]);
   await page.getByRole('button', { name: 'End' }).click();
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Know where every caption came from.');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Place live captions by speaker direction.');
   expect(await page.locator('h1').count()).toBe(1);
 });
 
-test('legal routes are direct-loadable and accessible', async ({ page }) => {
-  for (const route of ['/privacy/', '/terms/']) {
+test('legal and not-found pages are direct-loadable and accessible', async ({ page }) => {
+  for (const route of ['/privacy/', '/terms/', '/404.html']) {
     await page.goto(route);
     await expect(page.locator('main')).toBeVisible();
+    await expect(page.locator('.skip-link')).toHaveAttribute('href', '#main');
     expect(await page.locator('h1').count()).toBe(1);
     const results = await new AxeBuilder({ page }).analyze();
     expect(results.violations.filter((violation) => ['serious', 'critical'].includes(violation.impact || ''))).toEqual([]);

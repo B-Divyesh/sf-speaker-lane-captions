@@ -1,74 +1,111 @@
 # Caption Lanes
 
-Caption Lanes is a local-first live-caption utility for Deaf and hard-of-hearing people in small, in-person groups. Instead of mixing every voice into one transcript, it places utterances in coarse **Left**, **Centre**, **Right**, and optional **Across** lanes.
+Caption Lanes places live captions into left, centre, and right lanes. It is for Deaf and hard-of-hearing people in small groups.
 
-The free experience includes three directional lanes, on-device speech where the browser supports it, a typed backup input, confidence filtering, local transcript history, and export/import. Caption Lanes Plus is a $24 one-time license that adds a fourth lane and provides the paid-unlock path for future compatible microphone accessories.
+The free app provides three lanes, local caption history, typed input, confidence filtering, and transcript import and export. Caption Lanes Plus costs $24 once and adds a fourth lane.
 
 Live product: <https://speaker-lane-captions.sociobot.in>
 
+## Try the isolated demo
+
+Open <https://speaker-lane-captions.sociobot.in/demo> or select **Try it with sample data** on the landing page.
+
+The demo opens a six-caption conversation without a microphone. It uses the demo:caption-lanes storage namespace and never reads real captions or settings.
+
+Use **Reset demo** to restore the sample. Use **Start for real** to clear the demo namespace and return to setup.
+
+See [the demo contract](.factory/demo.md) for the sample and storage details.
+
 ## Privacy and capability boundaries
 
-- Everyone must consent before microphone access is requested.
-- Caption Lanes requests the browser’s explicit `processLocally` speech mode and refuses speech recognition that cannot advertise local processing.
-- Raw audio is never retained. Caption text and settings stay in IndexedDB/localStorage until the user clears them.
-- Direction is coarse, never identity. A stereo microphone can provide an energy-based left/centre/right hint; mono devices show a limitation and provide large manual direction controls (keyboard shortcuts 1–4).
-- Captions and direction can be wrong. This is not an emergency, forensic, medical, or legal transcription tool.
+- Everyone must agree before the app requests microphone access.
+- Speech requires the browser’s processLocally mode. The app refuses speech tools that cannot confirm local processing.
+- Caption Lanes never retains raw audio. Caption text and settings remain in the browser until the user clears them.
+- Direction is coarse, never identity. Stereo input can estimate left, centre, or right.
+- Mono devices show a limitation and keep the manual direction controls available.
+- Number keys 1–4 select a direction outside text fields.
+- Captions and direction can be wrong. Do not use this app for emergencies, medical decisions, legal records, or forensic work.
 
-Supported Chromium/Android versions need the on-device Web Speech API and a downloaded language pack. Other browsers can use the fully local typed-caption path. The first speech start checks for and, when supported, requests installation of the current language pack.
+Supported Chromium and Android versions need the on-device Web Speech API. Live speech also needs a downloaded language pack.
 
 ## Develop and verify
 
-Requires Node.js 20 or newer.
+Use Node.js 20 or newer.
 
-```sh
+~~~sh
 npm ci
-npm run dev
-npm test
+npm audit --audit-level=high
 npm run lint
 npm run typecheck
+npm test
 npm run build
-```
+~~~
 
-The exact production build command is `npm run build`. Static output is written to `dist/`, with `dist/index.html` at the deploy root. Playwright is pinned to 1.58.2; the factory image supplies its browser binaries.
+The production build command is npm run build. It writes the static site to dist/.
 
-Other useful commands:
+Useful focused commands:
 
-```sh
+~~~sh
 npm run test:unit
 npm run test:e2e
 npm run preview
 npm run cap:sync
 npm run test:live
-```
+~~~
 
-The end-to-end suite exercises desktop Chromium and an exact 390 × 844 phone viewport, keyboard and typed-caption paths, persistence, legal pages, measured 44 px touch targets, axe checks, and a versioned offline service-worker reload. `npm run test:live` checks the deployed artifact byte-for-byte along with the production checkout redirect, favicon, CSP, permissions policy, and frame protection; run it only after deployment.
+Playwright is pinned to 1.58.2. Tests cover desktop Chromium and an exact 390 × 844 mobile viewport.
+
+Every public product claim is listed in [the claim inventory](.factory/claims.json). Each entry includes its exact browser command and sandbox.
+
+## Deploy the static site
+
+Build and verify before deployment:
+
+~~~sh
+npm ci
+npm test
+npm run build
+swa deploy ./dist --app-name sf-speaker-lane-captions --resource-group sociobot --env production
+npm run test:live
+~~~
+
+Azure Static Web Apps reads dist/staticwebapp.config.json. The factory owns DNS and infrastructure settings.
 
 ## Android project
 
-The PWA is wrapped by Capacitor in `android/` using app ID `in.sociobot.speakerlanecaptions` (Android package names cannot contain the product slug’s hyphens). To refresh native web assets:
+The Capacitor wrapper is in android/. Its app ID is in.sociobot.speakerlanecaptions.
 
-```sh
+Refresh native web assets:
+
+~~~sh
 npm run cap:sync
-```
+~~~
 
-With an Android SDK and JDK configured:
+Build a debug APK on a worker with the Android SDK and JDK:
 
-```sh
+~~~sh
 cd android
 ./gradlew assembleDebug
-```
+~~~
 
-Release signing and distribution are handled in a later factory work order; no keystore or secret belongs in this repository.
+Release signing and distribution belong to a later Android work order. No keystore or secret belongs in this repository.
 
-## Paid unlock
+## Paid license
 
-Checkout is hosted by the Sociobot billing engine. The app stores a returned token under `sb_license:speaker-lane-captions`, removes it from the URL, verifies at most daily, works optimistically from a cached valid verdict when offline, and supports restoring a pasted license. No product ID or payment-provider SDK is embedded.
+Checkout uses the Sociobot billing API. The app never embeds a payment provider.
+
+The returned license uses sb_license:speaker-lane-captions. A valid check is reused for one day and reconciled when the device reconnects.
+
+Users can paste a license on another device. Core captions, export, privacy, and accessibility controls remain free.
 
 ## Project documentation
 
+- [Researched brief](.factory/brief.json)
 - [Visual thesis](.factory/design.md)
-- [Build handoff](.factory/handoff.md)
+- [Claim inventory](.factory/claims.json)
+- [Demo contract](.factory/demo.md)
+- [Repair handoff](.factory/handoff.md)
 - [Privacy policy](privacy/index.html)
 - [Terms](terms/index.html)
 
-Caption Lanes is MIT licensed. The original generated environmental artwork and its prompt/provenance are under `assets/src/`.
+Caption Lanes uses the MIT license. The original generated artwork and its provenance are in assets/src/.
