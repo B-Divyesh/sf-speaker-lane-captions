@@ -17,7 +17,7 @@ Repair commit: `540b356b2abe98139de6c63be2ed65be0113dc64`
 | F-1-5 | Added a mono-input warning/manual-placement test. Replaced the Android language-pack promise with conditional browser wording and tested install-before-start behavior. | `@claim:mono-input`; `@claim:language-pack-flow`. |
 | F-1-6 | Rewrote the free boundary to named controls and exercised typed captions, caption size, confidence filtering, lane color, and JSON export without a license. | `@claim:free-core-controls`. |
 | F-1-7 | Added fresh-context license restoration and forced verification when the browser reconnects. | `@claim:license-portability`; `@claim:license-reconnect`; `@claim:revoked-license`. |
-| F-1-8 | Expanded `.factory/claims.json` from 12 to 24 claims. The inventory test enforces one and only one tagged browser test for each entry. | `tests/unit/release.test.ts`; every exact claim command passed from `/tmp/caption-lanes-clean-x160B1`. |
+| F-1-8 | Expanded `.factory/claims.json` from 12 to 23 claims. The inventory test enforces one and only one tagged browser test for each entry. | `tests/unit/release.test.ts`; every exact claim command passed from `/tmp/caption-lanes-clean-x160B1`. |
 | F-1-9 | Replaced full reloads between `/` and `/demo` with History API navigation. Each change updates title/canonical/social metadata, announces the route, and focuses its `<h1>`; Back and Forward restore both states. | `moves focus, announces titles, and restores routes with browser history`; `opens the isolated sample directly with ?demo=1`. |
 | F-1-10 | Added the same wordmark, Demo/Privacy header navigation, one-line footer, Demo/Privacy/Terms links, factory credit, and build id to legal, offline, and 404 pages. | `serves complete route-specific metadata on direct routes`; `.factory/evidence/polish-1/local-privacy.png`; `.factory/evidence/polish-1/local-404.png`. |
 | F-1-11 | Added canonical, Open Graph, Twitter, favicon, and apple-touch metadata to Privacy, Terms, and 404. | `serves complete route-specific metadata on direct routes`; `tests/unit/release.test.ts`. |
@@ -28,7 +28,7 @@ Repair commit: `540b356b2abe98139de6c63be2ed65be0113dc64`
 ## Verification
 
 - Clean clone: `npm ci` found 0 vulnerabilities.
-- Every command in `.factory/claims.json`: 24/24 commands passed; 48/48 browser runs.
+- Every command in `.factory/claims.json`: 23/23 commands passed; 46/46 browser runs.
 - Clean clone: `npm test` passed 5 unit and 82 browser tests.
 - Clean clone: `npm run lint`, `npm run typecheck`, and `npm run build` passed.
 - Build: JS 20.25 kB raw / 7.36 kB gzip; CSS 17.03 kB raw / 4.63 kB gzip.
@@ -41,4 +41,11 @@ Repair commit: `540b356b2abe98139de6c63be2ed65be0113dc64`
 
 ## Live recheck
 
-The deployment and cold live recheck are recorded in `.factory/handoff.md`.
+- Deployed `dist/` to the production environment of `sf-speaker-lane-captions`.
+- `npm run test:live` passed exact local-to-live hashes, policy headers, favicon, 404, and ten consecutive checkout redirects.
+- A fresh 390 × 844 context confirmed the first screen fits, `/demo` and `?demo=1` each seed six rows, Reset removes changes, and Back/Forward focus the correct `<h1>`.
+- Direct Privacy and Terms loads returned 200 with complete metadata. An unknown route returned the designed HTTP 404.
+- Playwright axe returned zero violations on the live home, Privacy, Terms, and 404 pages. No console or page errors occurred outside the intentional 404 document request.
+- Live Lighthouse: 100 performance, 100 accessibility, 100 best practices, 100 SEO; LCP 0.9 s, CLS 0, TBT 0 ms. Report: `.factory/evidence/polish-1/lighthouse-live.json`.
+- Cold live screenshots: `.factory/evidence/polish-1/live-mobile-first-screen.png` and `.factory/evidence/polish-1/live-mobile-demo.png`.
+- `/opt/fleet/lib/verify-url.sh` live report: `.factory/evidence/polish-1/verify-live/verify.json`.
