@@ -157,6 +157,11 @@ async function applyRoute(options: { focus?: boolean; consent?: boolean } = {}):
   $('#demoBanner').hidden = !demoMode;
   updateRouteMetadata();
   if (demoMode) {
+    // Demo is a complete sandbox. A real entitlement already in memory must
+    // never affect the sample lane count or the selected direction.
+    plus = false;
+    activeLane = 'center';
+    directionConfidence = null;
     localStorage.removeItem(preferencesKey);
     captions = structuredClone(demoCaptions);
     await replaceCaptions(captions, databaseName);
@@ -280,7 +285,13 @@ async function startRoom(practice = false): Promise<void> {
     showMicError('On-device speech is not available in this browser. Use typed captions instead.');
     return;
   }
-  if (await speech.start()) await startDirectionAudio();
+  if (await speech.start()) {
+    if (speech.usesNativeBridge()) {
+      showMicError('On-device Android captions are active. Choose Left, Centre, or Right when the speaker changes.');
+    } else {
+      await startDirectionAudio();
+    }
+  }
 }
 
 async function startDirectionAudio(): Promise<void> {
@@ -372,7 +383,7 @@ function bindEvents(): void {
         return;
       }
       if (sessionMode === 'microphone') void speech.start().then((started) => {
-        if (started) return startDirectionAudio();
+        if (started) return speech.usesNativeBridge() ? undefined : startDirectionAudio();
       });
     }
   });
@@ -424,6 +435,7 @@ function bindEvents(): void {
   });
   $('#resetDemo').addEventListener('click', async () => {
     if (!demoMode) return;
+    plus = false;
     Object.assign(preferences, structuredClone(defaultPreferences));
     localStorage.removeItem(preferencesKey);
     savePreferences();
@@ -478,6 +490,9 @@ async function init(): Promise<void> {
   history.replaceState({ appRoute: true }, '', location.href);
   if (demoMode) {
     $('#demoBanner').hidden = false;
+    plus = false;
+    activeLane = 'center';
+    directionConfidence = null;
     Object.assign(preferences, structuredClone(defaultPreferences));
     localStorage.removeItem(preferencesKey);
     captions = structuredClone(demoCaptions);

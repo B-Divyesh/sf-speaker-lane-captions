@@ -37,7 +37,7 @@ describe('static release policy', () => {
     expect(home).toContain('id="how-it-works"');
     expect(home).toContain('Privacy and limits');
     expect(home).toContain('Plus costs $24 once.');
-    expect(home).toContain('Built by Param Factory · v1.0.0 · polish 1');
+    expect(home).toContain('Built by Param Factory · v1.0.0 · polish 2');
     for (const route of [privacy, terms, notFound]) {
       expect(route).toContain('class="skip-link" href="#main"');
       expect(route).toContain('property="og:type"');
@@ -47,24 +47,28 @@ describe('static release policy', () => {
       expect(route).toContain('name="twitter:image"');
       expect(route).toContain('rel="apple-touch-icon"');
       expect(route).toContain('aria-label="Main navigation"');
-      expect(route).toContain('Built by Param Factory · v1.0.0 · polish 1');
+      expect(route).toContain('Built by Param Factory · v1.0.0 · polish 2');
     }
     expect(notFound).toContain('<title>Page not found — Caption Lanes</title>');
     expect(notFound).toContain('<main id="main"');
     expect(sitemap).toContain('/demo</loc>');
   });
 
-  it('lists each public claim with exactly one tagged browser test', async () => {
+  it('lists each public claim with exactly one tagged sandbox test', async () => {
     const claims = JSON.parse(await readFile('.factory/claims.json', 'utf8')) as Array<{ id: string; claim: string; where: string; test: string; sandbox: string }>;
     const testFiles = (await readdir('tests/e2e')).filter((name) => name.endsWith('.spec.ts'));
-    const testSource = (await Promise.all(testFiles.map((name) => readFile(`tests/e2e/${name}`, 'utf8')))).join('\n');
+    const testSource = (await Promise.all(testFiles.map((name) => readFile(`tests/e2e/${name}`, 'utf8')))).join('\n')
+      + '\n' + await readFile('android/app/src/androidTest/java/in/sociobot/speakerlanecaptions/NativeCaptionBridgeTest.java', 'utf8');
     expect(claims.length).toBeGreaterThan(0);
     expect(new Set(claims.map(({ id }) => id)).size).toBe(claims.length);
     for (const claim of claims) {
       expect(claim.claim.length).toBeGreaterThan(0);
       expect(claim.where.length).toBeGreaterThan(0);
       expect(claim.sandbox.length).toBeGreaterThan(0);
-      expect(claim.test).toBe(`npm run test:e2e -- --grep @claim:${claim.id}`);
+      const expectedCommand = claim.id === 'android-native-caption-path'
+        ? 'npm run test:android'
+        : `npm run test:e2e -- --grep @claim:${claim.id}`;
+      expect(claim.test).toBe(expectedCommand);
       expect(testSource.match(new RegExp(`@claim:${claim.id}(?![\\w-])`, 'g'))).toHaveLength(1);
     }
     const copyAudit = await readFile('.factory/copy-audit.md', 'utf8');

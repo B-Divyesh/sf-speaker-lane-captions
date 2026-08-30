@@ -12,7 +12,7 @@ Open <https://speaker-lane-captions.sociobot.in/demo>, add `?demo=1` to the home
 
 The demo opens a six-caption conversation without a microphone. It keeps temporary data in a separate store named `demo:caption-lanes` and never reads real captions or settings.
 
-Use **Reset demo** to restore the sample. Use **Start for real** to clear the demo namespace and return to setup.
+Use **Reset demo** to restore the sample. Use **Start for real** to delete the sample changes and return to setup.
 
 See [the demo contract](.factory/demo.md) for the sample and storage details.
 
@@ -75,7 +75,7 @@ Azure Static Web Apps reads dist/staticwebapp.config.json. The factory owns DNS 
 
 The Capacitor wrapper is in `android/`. Its app ID is `in.sociobot.speakerlanecaptions`.
 
-This work order prepares the Android project but does not publish an APK. A later Android work order must verify typed and microphone captions on a device.
+Android 12 and newer use a native on-device speech bridge, not the WebView speech API. It fails closed when Android has no local speech language installed, while typed captions remain available.
 
 Refresh native web assets:
 
@@ -89,6 +89,8 @@ Build a debug APK on a worker with the Android SDK and JDK:
 cd android
 ./gradlew assembleDebug
 ~~~
+
+`NativeCaptionBridgeTest` checks the packaged WebView bridge. It reports unavailable without a local language model. Compile it with `./gradlew :app:assembleDebugAndroidTest`. Run it on Android 12+ with `./gradlew connectedDebugAndroidTest`.
 
 Release signing and distribution belong to a later Android work order. No keystore or secret belongs in this repository.
 

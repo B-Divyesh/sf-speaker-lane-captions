@@ -55,6 +55,8 @@ test('typed Pause and Resume never request microphone access', async ({ page }) 
 test('works at 390px and restores local captions', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
+  await expect(page.getByRole('navigation', { name: 'Main navigation' }).getByRole('link', { name: 'Demo' })).toBeVisible();
+  await expect(page.getByRole('navigation', { name: 'Main navigation' }).getByRole('link', { name: 'Privacy' })).toBeVisible();
   await page.getByRole('button', { name: 'Explore with typed captions' }).click();
   await page.getByLabel(/Type a caption/).fill('Saved locally.');
   await page.getByRole('button', { name: 'Add to lane' }).click();
@@ -277,11 +279,14 @@ test('the active room has one visible level-one heading and no axe violations', 
 });
 
 test('legal and not-found pages are direct-loadable and accessible', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
   for (const route of ['/privacy/', '/terms/', '/404.html']) {
     await page.goto(route);
     await expect(page.locator('main')).toBeVisible();
     await expect(page.locator('.skip-link')).toHaveAttribute('href', '#main');
     expect(await page.locator('h1').count()).toBe(1);
+    await expect(page.getByRole('navigation', { name: 'Main navigation' }).getByRole('link', { name: 'Demo' })).toBeVisible();
+    await expect(page.getByRole('navigation', { name: 'Main navigation' }).getByRole('link', { name: 'Privacy' })).toBeVisible();
     const results = await new AxeBuilder({ page }).analyze();
     expect(results.violations.filter((violation) => ['serious', 'critical'].includes(violation.impact || ''))).toEqual([]);
   }

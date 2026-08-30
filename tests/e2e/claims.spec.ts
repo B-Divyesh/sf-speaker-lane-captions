@@ -33,9 +33,13 @@ test.beforeEach(async ({ page }) => {
   await page.route('https://api.sociobot.in/**', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: '{"valid":false,"reason":"invalid"}' }));
 });
 
-test('keeps a seeded demo separate from real data @claim:demo-isolation', async ({ page }) => {
+test('keeps a seeded demo separate from real data and a real Plus license @claim:demo-isolation', async ({ page }) => {
+  await page.unroute('https://api.sociobot.in/**');
+  await page.route('https://api.sociobot.in/**', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: '{"valid":true,"reason":"ok"}' }));
   await page.goto('/');
   await page.evaluate(async () => {
+    localStorage.setItem('sb_license:speaker-lane-captions', 'real-plus-license');
+    localStorage.setItem('sb_license:speaker-lane-captions:verdict', JSON.stringify({ valid: true, checkedAt: Date.now() }));
     localStorage.setItem('caption-lanes:preferences', JSON.stringify({ captionSize: 36, lanes: { left: { label: 'Real label', color: '#73c8c3', locked: true } } }));
     const database = await new Promise<IDBDatabase>((resolve, reject) => {
       const request = indexedDB.open('caption-lanes', 1);
@@ -57,6 +61,7 @@ test('keeps a seeded demo separate from real data @claim:demo-isolation', async 
   await expect(page).toHaveTitle('Demo — Caption Lanes');
   await expect(page.getByText('Demo — sample data, nothing is saved')).toBeVisible();
   await expect(page.locator('.utterance')).toHaveCount(6);
+  await expect(page.locator('.lane')).toHaveCount(3);
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
   await page.locator('.utterances').first().focus();
   expect(await page.locator('.utterances').first().evaluate((element) => getComputedStyle(element).outlineWidth)).toBe('3px');
@@ -71,12 +76,14 @@ test('keeps a seeded demo separate from real data @claim:demo-isolation', async 
   await page.getByRole('button', { name: 'Reset demo' }).click();
   await expect(page.getByText('Temporary demo note')).toHaveCount(0);
   await expect(page.locator('.utterance')).toHaveCount(6);
+  await expect(page.locator('.lane')).toHaveCount(3);
 
   await startForReal(page);
   expect(await page.evaluate(async () => (await indexedDB.databases()).some(({ name }) => name === 'demo:caption-lanes'))).toBe(false);
   expect(await page.evaluate(() => Object.keys(localStorage).filter((key) => key.startsWith('demo:')))).toEqual([]);
   await page.getByRole('button', { name: 'Explore with typed captions' }).click();
   await expect(page.getByText('Real transcript stays private')).toBeVisible();
+  await expect(page.locator('.lane')).toHaveCount(4);
 });
 
 test('shows the three directional lanes and places captions manually @claim:directional-lanes', async ({ page }) => {
@@ -579,13 +586,14 @@ test('keeps card fields out of the app and redirects five buy requests to hosted
   }
 });
 
-test('removes Plus features after a recorded revoked verdict @claim:revoked-license', async ({ page }) => {
+test('removes Plus features after recorded revoked and refunded verdicts @claim:revoked-license', async ({ page }) => {
   let valid = true;
+  let inactiveReason = 'revoked';
   await page.unroute('https://api.sociobot.in/**');
   await page.route('https://api.sociobot.in/**', (route) => route.fulfill({
     status: 200,
     contentType: 'application/json',
-    body: JSON.stringify({ valid, reason: valid ? 'ok' : 'revoked' })
+    body: JSON.stringify({ valid, reason: valid ? 'ok' : inactiveReason })
   }));
   await page.goto('/');
   await page.getByRole('button', { name: 'View Caption Lanes Plus' }).click();
@@ -606,4 +614,20 @@ test('removes Plus features after a recorded revoked verdict @claim:revoked-lice
   await expect(page.locator('.lane[data-id="center"]')).toContainText('Visible after revocation');
   const stored = await databaseEntries(page, 'caption-lanes');
   expect(stored.find((entry) => entry.text === 'Visible after revocation')?.lane).toBe('center');
+
+  // A refund is represented by the same inactive capability state and must
+  // close Plus without waiting for a new browser or a fresh purchase flow.
+  valid = true;
+  inactiveReason = 'ok';
+  await page.getByRole('button', { name: 'View Caption Lanes Plus' }).click();
+  await page.getByLabel('Have a license? Paste it here.').fill('later-refunded');
+  await page.getByRole('button', { name: 'Restore license' }).click();
+  await expect(page.getByText('Plus is active on this device.')).toBeVisible();
+  await page.getByRole('button', { name: 'Close upgrade' }).click();
+  await expect(page.locator('.lane')).toHaveCount(4);
+  inactiveReason = 'refunded';
+  valid = false;
+  await page.evaluate(() => window.dispatchEvent(new Event('online')));
+  await expect(page.locator('.lane')).toHaveCount(3);
+  await expect(page.getByText('Across closed because Plus is inactive. Centre is now selected.')).toBeVisible();
 });

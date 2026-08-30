@@ -1,3 +1,5 @@
+import { Capacitor, registerPlugin } from '@capacitor/core';
+
 export interface SpeechCaption {
   text: string;
   confidence: number | null;
@@ -28,8 +30,20 @@ type RecognitionConstructor = (new () => RecognitionLike) & {
   install?: (options: { langs: string[] }) => Promise<boolean>;
 };
 
+interface NativeCaptionBridge {
+  availability(): Promise<{ available: boolean; message?: string }>;
+  start(): Promise<void>;
+  stop(): Promise<void>;
+  addListener(eventName: 'caption', listenerFunc: (event: SpeechCaption) => void): Promise<{ remove: () => Promise<void> }>;
+  addListener(eventName: 'error', listenerFunc: (event: { message: string }) => void): Promise<{ remove: () => Promise<void> }>;
+}
+
+const NativeCaption = registerPlugin<NativeCaptionBridge>('NativeCaption');
+
 export class OnDeviceSpeech {
   private recognition: RecognitionLike | null = null;
+  private nativeListeners: Array<{ remove: () => Promise<void> }> = [];
+  private nativeActive = false;
   private wanted = false;
 
   constructor(
@@ -39,10 +53,13 @@ export class OnDeviceSpeech {
   ) {}
 
   supported(): boolean {
-    return Boolean(this.constructorForBrowser());
+    return Capacitor.isNativePlatform() || Boolean(this.constructorForBrowser());
   }
 
+  usesNativeBridge(): boolean { return this.nativeActive; }
+
   async start(): Promise<boolean> {
+    if (Capacitor.isNativePlatform()) return this.startNative();
     const Constructor = this.constructorForBrowser();
     if (!Constructor) return false;
     const recognition = new Constructor();
@@ -116,7 +133,35 @@ export class OnDeviceSpeech {
     this.wanted = false;
     this.recognition?.stop();
     this.recognition = null;
+    if (this.nativeActive) {
+      void NativeCaption.stop().catch(() => undefined);
+      for (const listener of this.nativeListeners.splice(0)) void listener.remove();
+      this.nativeActive = false;
+    }
     this.onState(false);
+  }
+
+  private async startNative(): Promise<boolean> {
+    try {
+      const availability = await NativeCaption.availability();
+      if (!availability.available) {
+        this.onError(availability.message || 'On-device captions are not available on this Android device. Use typed captions instead.');
+        return false;
+      }
+      this.nativeListeners.push(await NativeCaption.addListener('caption', (caption) => {
+        if (caption.text.trim()) this.onCaption({ text: caption.text, confidence: caption.confidence });
+      }));
+      this.nativeListeners.push(await NativeCaption.addListener('error', ({ message }) => this.onError(message)));
+      await NativeCaption.start();
+      this.nativeActive = true;
+      this.onState(true);
+      return true;
+    } catch (error) {
+      for (const listener of this.nativeListeners.splice(0)) await listener.remove();
+      const message = error instanceof Error ? error.message : '';
+      this.onError(message || 'On-device captions could not start. Allow microphone access, then try again.');
+      return false;
+    }
   }
 
   private constructorForBrowser(): RecognitionConstructor | undefined {

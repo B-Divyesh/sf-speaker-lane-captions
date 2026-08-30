@@ -77,6 +77,13 @@
     "sandbox": "enter the real flow from /demo with recorded browser speech fixtures; reject missing processLocally support and assert true when supported"
   },
   {
+    "id": "android-native-caption-path",
+    "claim": "Caption Lanes builds an Android app with a native on-device caption bridge and an instrumented bridge test.",
+    "where": "README Android project section",
+    "test": "npm run test:android",
+    "sandbox": "clean Android SDK and JDK worker; sync web assets, assemble the debug APK and debug Android-test APK, and compile NativeCaptionBridgeTest"
+  },
+  {
     "id": "plus-license",
     "claim": "Caption Lanes Plus costs $24 once, adds a fourth lane, and reuses a valid verification for one day.",
     "where": "landing facts, paid section, terms, README",
@@ -158,6 +165,6 @@
     "claim": "A revoked or refunded license stops Caption Lanes Plus features.",
     "where": "Plus dialog, terms",
     "test": "npm run test:e2e -- --grep @claim:revoked-license",
-    "sandbox": "fresh real mode with a recorded valid response; select Across; return a recorded revoked response; assert Centre becomes selected and a new caption is visible and stored in Centre"
+    "sandbox": "fresh real mode with recorded valid, revoked, and refunded responses; select Across; after each inactive verdict assert the fourth lane closes and Centre is selected"
   }
 ]

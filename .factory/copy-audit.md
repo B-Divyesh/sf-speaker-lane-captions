@@ -66,7 +66,7 @@ This says what the product does, names its audience, and gives the first action 
 | Typed captions, display controls, confidence filtering, and transcript export stay free. | 10 | Pass |
 | Caption Lanes Plus adds a fourth “Across” lane. | 8 | Pass |
 | Typed captions, display controls, confidence filtering, and transcript export stay free. | 10 | Pass |
-| Sociobot/Dodo handles checkout and refunds. | 5 | Pass |
+| Sociobot/Dodo hosts checkout. | 4 | Pass |
 | If checkout is unavailable, keep this dialog open and try again. | 10 | Pass |
 
 ## Product-room and footer phrases
@@ -113,3 +113,13 @@ No audited product copy uses: leverage, seamless, effortless, robust, powerful, 
 | User’s ordinary local workspace | real captions |
 
 No sentence exceeds 22 words. No flagged wording remains.
+
+## README changes in polish 2
+
+| Copy | Words | Status |
+| --- | ---: | --- |
+| Use Start for real to delete the sample changes and return to setup. | 13 | Pass |
+| Android 12 and newer use a native on-device speech bridge, not the WebView speech API. | 16 | Pass |
+| It fails closed when Android has no local speech language installed, while typed captions remain available. | 16 | Pass |
+| NativeCaptionBridgeTest checks the packaged WebView bridge. | 5 | Pass |
+| It reports unavailable without a local language model. | 8 | Pass |

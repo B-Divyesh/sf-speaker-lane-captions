@@ -207,7 +207,6 @@ legend { margin-bottom: 12px; font-weight: 700; }
   .topbar { min-height: 64px; flex-wrap: wrap; }
   .header-nav { order: 3; width: 100%; }
   .header-nav a { flex: 1; justify-content: center; }
-  .header-nav a:last-child { display: none; }
   .hero-art { min-height: 720px; border-radius: 20px; }
   .hero-copy { padding: 28px 20px; }
   h1 { font-size: 40px; }
