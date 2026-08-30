@@ -1,76 +1,141 @@
-# Caption Lanes — independent verification handoff
+# Caption Lanes — repair 5 handoff
 
 Date: 2026-08-30 UTC
 
-Work order: `speaker-lane-captions-verify-5`
+Work order: `speaker-lane-captions-repair-5`
 
-Candidate: `f4b46fd2a1f4e772939a0e2c14aeb9ab3d053bb9`
+Verifier report: `.factory/verification-5.md` at `88557b03ca02e9ab36921f6032ca8f810d795714`
 
-Live URL: <https://speaker-lane-captions.sociobot.in/>
+Failed candidate: `f4b46fd2a1f4e772939a0e2c14aeb9ab3d053bb9`
 
-Full report: [`.factory/verification-5.md`](verification-5.md)
+Deployed repair source: `5894f20eaad53eda5ce13418a6fb0fab0aebc448`
 
-## Result: FAIL
+Production: <https://speaker-lane-captions.sociobot.in/>
 
-Production matches the candidate exactly, and its implemented caption,
-accessibility, privacy, offline, update, rate-limit, and performance paths are
-mostly healthy. The release fails two mandatory acceptance gates:
+Demo: <https://speaker-lane-captions.sociobot.in/demo>
 
-1. `.factory/claims.json` is missing.
-2. The cold first screen does not name the Deaf/hard-of-hearing audience, puts
-   all actions below the initial desktop and mobile viewports, and provides no
-   one-click isolated sample-data demo.
+Azure Static Web App: `sf-speaker-lane-captions` in resource group `sociobot`
 
-## Release-blocking evidence
+## Result
 
-- The first repository check at the clean candidate returned a missing
-  `.factory/claims.json`.
-- At 1440×900, the two actions begin at y=906.59 and y=962.59. At 390×844,
-  they begin at y=1050.77 and y=1106.77.
-- `/demo` and `/?demo=1` return the ordinary empty setup. **Explore with typed
-  captions** opens empty lanes, writes to `caption-lanes` storage, and has no
-  demo banner, reset, or start-for-real action. `.factory/demo.md` is missing.
+All release-blocking findings in independent verification 5 are repaired and covered by regressions. The existing caption, license, privacy, offline, and Android behaviors remain intact.
 
-Additional P2 findings: no real 404; missing canonical/Open Graph/Twitter
-metadata; incomplete standard landing sections/footer build identity; and no
-skip links on legal pages. P3 findings: `.factory/copy-audit.md` is absent, one
-privacy sentence exceeds 22 words, and README lacks deployment instructions.
+## Repairs
 
-## Verification summary
+### Claim inventory
+
+- Added `.factory/claims.json` with 12 public claims.
+- Each claim has one unique `@claim:<id>` Playwright test and an exact command.
+- Coverage includes demo isolation, manual and stereo direction, privacy, raw-audio handling, offline reload, persistence, import/export, input length, confidence filtering, local speech, and Plus licensing.
+- Added a unit policy check that rejects duplicate or missing claim tags.
+
+### Isolated sample demo
+
+- Added the one-click **Try it with sample data** action and direct `/demo` route.
+- The first demo screen contains six realistic captions across Left, Centre, and Right.
+- Demo captions use IndexedDB `demo:caption-lanes`.
+- Demo settings use localStorage `demo:caption-lanes:preferences`.
+- Demo mode never reads the real transcript, real preferences, or stored license.
+- **Reset demo** restores the bundled sample.
+- **Start for real** clears the demo namespace before returning to consent setup.
+- Page exit also discards the demo namespace.
+- Added the persistent required demo banner and `.factory/demo.md`.
+
+### Cold first screen
+
+- Replaced metaphorical copy with the six-word job headline: “Place live captions by speaker direction.”
+- Named Deaf and hard-of-hearing people in the supporting sentence.
+- Put the primary demo action, real-start action, outcome, and three facts inside the first viewport.
+- Live measurements:
+  - 1440 × 900: action bottom 456 px; facts bottom 614 px.
+  - 390 × 844: action bottom 525 px; facts bottom 756 px.
+- Added exact desktop and mobile viewport assertions.
+
+### Site structure and metadata
+
+- Added How it works, privacy/limitations, and $24 one-time Plus sections.
+- Added canonical, Open Graph, Twitter card, SVG favicon, and an original 1200 × 630 social image.
+- Added a designed `404.html`.
+- Removed the catch-all navigation fallback and added a specific `/demo` rewrite.
+- Added the required HTTP 404 response override.
+- Added “Built by Param Factory” and version/build identity to every footer.
+- Added skip links and focusable main targets to Privacy, Terms, offline, and 404 pages.
+- Added keyboard-focusable, named scroll regions for populated caption lanes.
+
+### Copy and documentation
+
+- Added `.factory/copy-audit.md`; no audited sentence exceeds 22 words and no banned wording remains.
+- Split the 29-word privacy sentence into short, direct statements.
+- Added demo, claim, deployment, and Android verification instructions to `README.md`.
+- Removed the unprovable future accessory-input promise from customer-facing copy.
+- Recorded the derived social image provenance in `.factory/design.md`.
+
+## Regression evidence
+
+All commands ran from `/work/repo`.
 
 | Check | Result |
 | --- | --- |
-| `npm ci`; high-severity audit | PASS — 255 packages; 0 vulnerabilities. |
-| `npm run lint`; `npm run typecheck` | PASS. |
-| `npm test` | PASS — 3/3 Vitest and 22/22 Playwright runs. |
-| `npm run build` | PASS — 167,554-byte `dist/`; JS 15,782 B, CSS 13,792 B. |
-| `npm run cap:sync`; Capacitor doctor | PASS. |
-| Debug APK | ENVIRONMENT BLOCKED — no Java/JDK; no APK result claimed. |
-| `npm run test:live` | PASS — 16/16 deployable files match production. |
-| Live functional exercise | PASS — typed and mocked microphone/direction flows, confidence boundary, export/import/recovery, persistence, license and four-lane unlock. |
-| Accessibility/keyboard/mobile | PASS for tested views — zero axe findings, visible focus, dialog focus trap/return, 44 px targets, no 390/320 px overflow. Legal-page skip links remain contract-missing. |
-| Privacy/network | PASS for available real flow — no analytics/CDNs; typed flow made only same-origin requests. |
-| API allowance | PASS — request 31 returned 429 with `Retry-After: 4` after 30 successful requests. |
-| PWA offline/update | PASS — exact installed start URL offline; update notice, cache replacement, offline reload. |
-| Lighthouse mobile | PASS — 98/100/100/100; LCP 1.1 s, TBT 160 ms, CLS 0, 73,048 B. |
+| `npm ci` | PASS — 255 packages installed from the lockfile. |
+| `npm audit --audit-level=high` | PASS — 0 vulnerabilities. |
+| `npm run lint` | PASS — no findings. |
+| `npm run typecheck` | PASS — no TypeScript errors. |
+| `npm test` | PASS — 5/5 Vitest and 54/54 Playwright runs. |
+| Claim commands | PASS — all 12 exact commands in `.factory/claims.json`; each passed desktop and 390 px mobile. |
+| `npm run build` | PASS — Vite and the service-worker builder produced `dist/`. |
+| `npm run cap:sync` | PASS — final `dist/` copied into the Android wrapper. |
+| `npx cap doctor android` | PASS — “Android looking great.” |
+| Static Web Apps emulator | PASS — `/demo` returned 200; an unknown route returned the designed page with HTTP 404. |
+| `npm run test:live` | PASS — checkout, favicon, headers, 404, demo route, and every deployed file match production. |
+| `verify-url.sh` | PASS — 783 ms load, no console errors, one h1, `lang=en`, main present, 0 missing alt, 0 unnamed buttons. |
+| Live desktop/mobile exercise | PASS — six demo captions, zero axe violations, zero console errors, and no horizontal overflow at 1440 × 900 or 390 × 844. |
+| Live offline restart | PASS — a fresh controlled service worker reopened `/demo` offline with its sample visible. |
+| Service-worker update regression | PASS — an installed worker transition announces “An update is ready.” |
+| Reduced motion and 320 px reflow | PASS — 0.01 ms animation, no overflow in room, Settings, or Plus. |
+| Live license response | PASS — invalid token returned 200, `valid:false`, scoped CORS, and `Cache-Control: no-store`. |
 
-## Re-run
+The final browser matrix covers desktop Chromium and exact 390 × 844 mobile Chromium. It also covers keyboard skip navigation, number shortcuts, dialog focus return, 44 px targets, axe, and 320 px reflow.
 
-```sh
-npm ci
-npm audit --audit-level=high
-npm run lint
-npm run typecheck
-npm test
-npm run build
-npm run cap:sync
-npx cap doctor android
-npm run test:live
-```
+## Performance
 
-## Next steps
+Final live Lighthouse 12.8.2 mobile:
 
-Implement the claims manifest and isolated sample demo first, then repair the
-first screen and site-structure findings. Re-run the report's complete matrix.
-An Android-capable worker must still build and smoke-test the APK, and physical
-participants must run the brief's 30-utterance attribution study.
+- Performance: 100
+- Accessibility: 100
+- Best Practices: 100
+- SEO: 100
+- FCP: 0.9 s
+- LCP: 0.9 s
+- TBT: 10 ms
+- CLS: 0
+- Transfer: 74 KiB
+
+Build sizes:
+
+- JavaScript: 18,239 bytes raw; 6.83 KiB gzip
+- CSS: 16,853 bytes raw; 4.58 KiB gzip
+- Mobile hero: 8,074 bytes
+- Social preview: 13,946 bytes
+- Complete `dist/`: 195,112 bytes across 20 files
+
+Core deployed SHA-256 values:
+
+| Artifact | SHA-256 |
+| --- | --- |
+| `index.html` | `7c6b3bfac4c7df84062f80a4fedccb68ebdb1df894f37d97873c1b8b8e30bafa` |
+| `sw.js` | `175e0185521b0618fb6a890dc6add9bef90385fc787b80e1788295c09bc3e71a` |
+| `assets/app-NK4eZL0p.js` | `8358910a838e4fb2181431362d5dc886c347636547f2391e0594aae701bc6038` |
+| `assets/styles-PKZBzHyu.css` | `7b82282b76c0c987861f532e84f2663d4be61d8f45e9529465e98a79955ecd7a` |
+
+## Deployment
+
+`swa deploy ./dist --app-name sf-speaker-lane-captions --resource-group sociobot --env production` completed successfully.
+
+The deployment target reported <https://blue-forest-0ca84d20f.7.azurestaticapps.net>. The custom production domain serves the same byte-identical artifact.
+
+Live response policy includes HSTS, `nosniff`, strict-origin referrer policy, restrictive CSP with `frame-ancestors 'none'`, microphone-only permissions, and `X-Frame-Options: DENY`.
+
+## Known external validation
+
+- This static worker has no Java runtime, so it could not run `./gradlew assembleDebug`. The final Capacitor project is synchronized and passes doctor. APK build and physical-device microphone, lifecycle, back-gesture, WebView speech, safe-area, and install/update checks remain for the later Android work order.
+- The brief’s four-person, 30-utterance study needs human participants. No automated result is presented as evidence for the 80% attribution target.

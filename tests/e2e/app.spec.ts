@@ -198,6 +198,27 @@ test('reloads the app shell offline after installation', async ({ page, context 
   await expect(page.getByText('You’re offline.')).toBeVisible();
 });
 
+test('announces an installed service-worker update', async ({ page }) => {
+  await page.addInitScript(() => {
+    class InstallWorker extends EventTarget { state = 'installing'; }
+    class Registration extends EventTarget { installing = new InstallWorker(); }
+    const registration = new Registration();
+    Object.defineProperty(window, '__updateRegistration', { value: registration });
+    Object.defineProperty(navigator, 'serviceWorker', {
+      configurable: true,
+      value: { controller: {}, register: async () => registration }
+    });
+  });
+  await page.goto('/');
+  await page.evaluate(() => {
+    const registration = (window as typeof window & { __updateRegistration: { installing: EventTarget & { state: string }; dispatchEvent(event: Event): boolean } }).__updateRegistration;
+    registration.dispatchEvent(new Event('updatefound'));
+    registration.installing.state = 'installed';
+    registration.installing.dispatchEvent(new Event('statechange'));
+  });
+  await expect(page.getByText('An update is ready. Reopen Caption Lanes to use it.')).toBeVisible();
+});
+
 test('opens the exact unvisited installed start URL offline after installation', async ({ browser }) => {
   const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
   const page = await context.newPage();
