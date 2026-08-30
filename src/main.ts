@@ -74,6 +74,26 @@ function escapeText(value: string): string {
   return span.innerHTML;
 }
 
+function setHeadingLevel(id: string, level: 1 | 2): void {
+  const current = $<HTMLHeadingElement>(`#${id}`);
+  if (current.tagName === `H${level}`) return;
+  const next = document.createElement(`h${level}`);
+  next.id = current.id;
+  next.className = current.className;
+  next.textContent = current.textContent;
+  current.replaceWith(next);
+}
+
+function setActiveViewHeadings(roomIsActive: boolean): void {
+  if (roomIsActive) {
+    setHeadingLevel('page-title', 2);
+    setHeadingLevel('room-title', 1);
+    return;
+  }
+  setHeadingLevel('room-title', 2);
+  setHeadingLevel('page-title', 1);
+}
+
 function render(): void {
   const lanes = visibleLanes();
   $('#lanes').style.setProperty('--lane-count', String(lanes.length));
@@ -151,6 +171,7 @@ function showMicError(message: string): void {
 }
 
 async function startRoom(practice = false): Promise<void> {
+  setActiveViewHeadings(true);
   $('#welcome').hidden = true;
   $('#room').hidden = false;
   $('#room').scrollIntoView({ block: 'start' });
@@ -252,7 +273,7 @@ function bindEvents(): void {
       });
     }
   });
-  $('#endButton').addEventListener('click', () => { stopAudio(); paused = false; sessionMode = null; $('#room').hidden = true; $('#welcome').hidden = false; $('#welcome').scrollIntoView(); });
+  $('#endButton').addEventListener('click', () => { stopAudio(); paused = false; sessionMode = null; setActiveViewHeadings(false); $('#room').hidden = true; $('#welcome').hidden = false; $('#welcome').scrollIntoView(); });
   $('#exportButton').addEventListener('click', exportTranscript);
   $('#openSettings').addEventListener('click', () => { renderLaneSettings(); $<HTMLDialogElement>('#settingsDialog').showModal(); });
   $('#openUpgrade').addEventListener('click', () => $<HTMLDialogElement>('#upgradeDialog').showModal());

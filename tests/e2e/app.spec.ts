@@ -112,24 +112,31 @@ test('a lane label can be renamed and is retained in the directional controls', 
   await expect(page.getByRole('button', { name: /← Window shortcut 1/ })).toBeVisible();
 });
 
-test('all reported mobile controls have at least 44px touch targets', async ({ page }) => {
+test('all visible mobile controls have at least 44px touch targets', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
   await page.locator('.skip-link').focus();
 
-  const expectTouchTarget = async (selector: string) => {
+  const expectTouchTargets = async () => {
+    const selector = 'button:visible, a:visible, input:not([type="hidden"]):visible, label:has(input):visible';
     const targets = page.locator(selector);
     for (let index = 0; index < await targets.count(); index += 1) {
       const box = await targets.nth(index).boundingBox();
       expect(box, `${selector}[${index}] is not rendered`).not.toBeNull();
-      expect(box!.width, `${selector}[${index}] width`).toBeGreaterThanOrEqual(44);
-      expect(box!.height, `${selector}[${index}] height`).toBeGreaterThanOrEqual(44);
+      const cssPixels = (value: number) => Math.round(value * 100) / 100;
+      expect(cssPixels(box!.width), `${selector}[${index}] width`).toBeGreaterThanOrEqual(44);
+      expect(cssPixels(box!.height), `${selector}[${index}] height`).toBeGreaterThanOrEqual(44);
     }
   };
 
-  await expectTouchTarget('.skip-link, .brand, footer a, footer button');
+  await expectTouchTargets();
   await page.getByRole('button', { name: 'Explore with typed captions' }).click();
-  await expectTouchTarget('.session-actions button');
+  await expectTouchTargets();
+  await page.getByRole('button', { name: 'Open settings' }).click();
+  await expectTouchTargets();
+  await page.getByRole('button', { name: 'Close settings' }).click();
+  await page.getByRole('button', { name: 'Caption Lanes Plus' }).click();
+  await expectTouchTargets();
   expect(await page.locator('body').evaluate((body) => body.scrollWidth <= innerWidth)).toBe(true);
 });
 
@@ -159,6 +166,40 @@ test('reloads the app shell offline after installation', async ({ page, context 
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
   await page.evaluate(() => window.dispatchEvent(new Event('offline')));
   await expect(page.getByText('You’re offline.')).toBeVisible();
+});
+
+test('opens the exact unvisited installed start URL offline after installation @claim:offline-installed-start-url', async ({ browser }) => {
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  const page = await context.newPage();
+  try {
+    await page.goto('http://127.0.0.1:4173/', { waitUntil: 'networkidle' });
+    await page.evaluate(async () => { await navigator.serviceWorker.ready; });
+    await page.reload({ waitUntil: 'networkidle' });
+    await page.waitForFunction(() => Boolean(navigator.serviceWorker.controller));
+    const cacheUrls = await page.evaluate(async () => (await Promise.all((await caches.keys()).map(async (name) => (await caches.open(name)).keys()))).flat().map((request) => request.url));
+    expect(cacheUrls).toContain('http://127.0.0.1:4173/?v=2&source=installed');
+
+    await context.setOffline(true);
+    await page.goto('http://127.0.0.1:4173/?v=2&source=installed', { waitUntil: 'domcontentloaded' });
+    await expect(page).toHaveTitle('Caption Lanes — Know where each caption came from');
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Know where every caption came from.');
+    await expect(page.getByRole('button', { name: 'Explore with typed captions' })).toBeVisible();
+  } finally {
+    await context.close();
+  }
+});
+
+test('the active room has one visible level-one heading and no axe violations', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Explore with typed captions' }).click();
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Conversation');
+  expect(await page.locator('h1').count()).toBe(1);
+  expect(await page.locator('h1:visible').count()).toBe(1);
+  const results = await new AxeBuilder({ page }).analyze();
+  expect(results.violations).toEqual([]);
+  await page.getByRole('button', { name: 'End' }).click();
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Know where every caption came from.');
+  expect(await page.locator('h1').count()).toBe(1);
 });
 
 test('legal routes are direct-loadable and accessible', async ({ page }) => {

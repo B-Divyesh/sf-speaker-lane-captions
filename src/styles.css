@@ -62,11 +62,12 @@ h2 { margin: 0; font-family: Georgia, "Times New Roman", serif; font-size: clamp
 .trust-list li { display: flex; gap: 10px; align-items: center; }
 .trust-list span { color: var(--moss); }
 .consent-panel form { padding: 24px; background: var(--pine); border: 1px solid #31413c; border-radius: var(--radius); }
-.consent-check { display: flex; align-items: flex-start; gap: 12px; font-size: 17px; line-height: 1.4; cursor: pointer; }
-input[type="checkbox"] { appearance: none; width: 24px; height: 24px; flex: 0 0 auto; margin: 0; border: 2px solid #77877f; border-radius: 6px; background: var(--night); display: grid; place-content: center; }
-input[type="checkbox"]::before { content: "✓"; color: var(--night); font-weight: 900; transform: scale(0); }
-input[type="checkbox"]:checked { background: var(--lantern); border-color: var(--lantern); }
-input[type="checkbox"]:checked::before { transform: scale(1); }
+.consent-check { display: flex; align-items: center; min-height: 44px; gap: 8px; font-size: 17px; line-height: 1.4; cursor: pointer; }
+input[type="checkbox"] { appearance: none; width: 44px; height: 44px; flex: 0 0 auto; margin: 0; border: 0; border-radius: 8px; background: transparent; display: grid; place-content: center; cursor: pointer; }
+input[type="checkbox"]::before { content: ""; grid-area: 1 / 1; width: 20px; height: 20px; border: 2px solid #77877f; border-radius: 6px; background: var(--night); }
+input[type="checkbox"]::after { content: "✓"; grid-area: 1 / 1; color: var(--night); font-weight: 900; transform: scale(0); }
+input[type="checkbox"]:checked::before { background: var(--lantern); border-color: var(--lantern); }
+input[type="checkbox"]:checked::after { transform: scale(1); }
 .primary-button, .secondary-button, .danger-button, .text-button, .button-link { min-height: 48px; border-radius: 999px; padding: 0 20px; border: 1px solid transparent; font-weight: 750; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 9px; text-decoration: none; }
 .primary-button { width: 100%; margin-top: 24px; background: var(--lantern); color: #21190e; }
 .secondary-button { background: var(--pine-light); border-color: #41534c; color: var(--fog); }
@@ -76,6 +77,7 @@ input[type="checkbox"]:checked::before { transform: scale(1); }
 
 .room { width: min(1480px, calc(100% - 32px)); margin: 28px auto 72px; }
 .room-heading { display: flex; justify-content: space-between; align-items: center; gap: 20px; margin-bottom: 28px; }
+.room-heading h1 { max-width: none; font-size: clamp(28px, 4vw, 40px); line-height: 1.1; }
 .notice { margin: 0 0 16px; padding: 14px 18px; border-left: 4px solid var(--tide); background: #172825; color: var(--fog); border-radius: 4px 12px 12px 4px; }
 .global-notice { width: min(1180px, calc(100% - 32px)); margin: 10px auto 18px; }
 .notice.warning { border-color: var(--ember); background: #2b2119; }
@@ -135,7 +137,7 @@ legend { margin-bottom: 12px; font-weight: 700; }
 .price span { color: var(--mist); font-family: Arial, sans-serif; font-size: 16px; }
 .upgrade-body > p { line-height: 1.55; }
 .upgrade-body .primary-button { margin: 8px 0; }
-.upgrade-body > p:last-child a, .legal-page main a { min-height: 44px; display: inline-flex; align-items: center; }
+.upgrade-body > p:last-child a, .legal-page main a { min-width: 44px; min-height: 44px; display: inline-flex; align-items: center; }
 .restore-form { margin-top: 24px; padding-top: 24px; border-top: 1px solid #35443f; }
 .restore-form label { display: block; margin-bottom: 8px; font-weight: 700; }
 #licenseStatus { color: var(--mist); font-size: 14px; }

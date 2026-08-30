@@ -4,7 +4,7 @@ import { join } from 'node:path';
 
 const dist = new URL('../dist/', import.meta.url);
 const htmlFiles = ['index.html', 'privacy/index.html', 'terms/index.html', 'offline.html'];
-const shell = new Set(['/', '/offline.html', '/privacy/', '/terms/', '/manifest.webmanifest', '/favicon.ico']);
+const shell = new Set(['/', '/?v=2&source=installed', '/offline.html', '/privacy/', '/terms/', '/manifest.webmanifest', '/favicon.ico']);
 
 for (const file of htmlFiles) {
   const html = await readFile(new URL(file, dist), 'utf8');
