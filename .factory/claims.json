@@ -44,7 +44,7 @@
   {
     "id": "caption-persistence",
     "claim": "Real caption text and display settings stay in the browser across reloads until cleared.",
-    "where": "privacy section, privacy page, README",
+    "where": "header, privacy section, privacy page, README",
     "test": "npm run test:e2e -- --grep @claim:caption-persistence",
     "sandbox": "fresh /demo; choose Start for real; add a caption; reload; reopen typed captions"
   },
@@ -72,7 +72,7 @@
   {
     "id": "local-speech",
     "claim": "Live speech requires browser-confirmed on-device processing and remains optional because typed captions work without it.",
-    "where": "consent, privacy page, README",
+    "where": "consent, offline notice, privacy page, README",
     "test": "npm run test:e2e -- --grep @claim:local-speech",
     "sandbox": "enter the real flow from /demo with recorded browser speech fixtures; reject missing processLocally support and assert true when supported"
   },
@@ -158,6 +158,6 @@
     "claim": "A revoked or refunded license stops Caption Lanes Plus features.",
     "where": "Plus dialog, terms",
     "test": "npm run test:e2e -- --grep @claim:revoked-license",
-    "sandbox": "fresh real mode with a recorded valid response followed by a recorded revoked response; assert the fourth lane is removed"
+    "sandbox": "fresh real mode with a recorded valid response; select Across; return a recorded revoked response; assert Centre becomes selected and a new caption is visible and stored in Centre"
   }
 ]

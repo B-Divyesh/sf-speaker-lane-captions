@@ -23,6 +23,7 @@
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=79e949f8" />
     <link rel="preload" as="image" href="/assets/room-table-720.webp?v=146d6ff0" type="image/webp" fetchpriority="high" />
+    <script src="/route-state.js"></script>
   </head>
   <body>
     <a class="skip-link" href="#main">Skip to captions</a>
@@ -34,7 +35,7 @@
         </a>
         <nav class="header-nav" aria-label="Main navigation"><a href="/demo">Demo</a><a href="/privacy/">Privacy</a></nav>
         <div class="top-actions">
-          <span class="privacy-chip"><span aria-hidden="true">●</span> Local only</span>
+          <span class="privacy-chip"><span aria-hidden="true">●</span> Caption text stays here</span>
           <button class="icon-button" id="openSettings" type="button" aria-label="Open settings"><span aria-hidden="true">⚙</span></button>
         </div>
       </header>
@@ -46,7 +47,7 @@
 
       <div class="visually-hidden" id="routeAnnouncement" role="status" aria-live="polite"></div>
       <main id="main" tabindex="-1">
-        <div class="notice global-notice" id="offlineNotice" role="status" hidden><strong>You’re offline.</strong> Captions keep working if the on-device language pack is installed.</div>
+        <div class="notice global-notice" id="offlineNotice" role="status" hidden><strong>You’re offline.</strong> Use typed captions if live speech is unavailable.</div>
         <section class="welcome" id="welcome" aria-labelledby="page-title">
           <div class="hero-art">
             <picture>

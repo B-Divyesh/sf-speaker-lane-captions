@@ -64,6 +64,29 @@ test('works at 390px and restores local captions', async ({ page }) => {
   expect(await page.locator('body').evaluate((body) => body.scrollWidth <= innerWidth)).toBe(true);
 });
 
+test('direct demo navigation stays below the CLS budget while the app bundle loads', async ({ page }) => {
+  await page.route('**/assets/app-*.js', async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, 800));
+    await route.continue();
+  });
+  await page.addInitScript(() => {
+    const state = { total: 0 };
+    Object.defineProperty(window, '__captionLanesLayoutShift', { value: state });
+    new PerformanceObserver((list) => {
+      for (const entry of list.getEntries()) {
+        const shift = entry as PerformanceEntry & { hadRecentInput: boolean; value: number };
+        if (!shift.hadRecentInput) state.total += shift.value;
+      }
+    }).observe({ type: 'layout-shift', buffered: true });
+  });
+
+  await page.goto('/demo', { waitUntil: 'networkidle' });
+  await page.waitForTimeout(250);
+  await expect(page.getByRole('heading', { level: 1, name: 'Conversation' })).toBeVisible();
+  const total = await page.evaluate(() => (window as typeof window & { __captionLanesLayoutShift: { total: number } }).__captionLanesLayoutShift.total);
+  expect(total).toBeLessThan(0.1);
+});
+
 test('import asks before replacing local captions and persists only after confirmation', async ({ page }) => {
   const transcript = {
     product: 'Caption Lanes',

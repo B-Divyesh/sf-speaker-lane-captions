@@ -341,6 +341,11 @@ async function updateLicense(force = false): Promise<void> {
   const result = await verifyLicense(force);
   if (demoMode || location.pathname !== routeAtStart) return;
   plus = result.valid;
+  if (!plus && activeLane === 'across') {
+    activeLane = 'center';
+    directionConfidence = null;
+    toast('Across closed because Plus is inactive. Centre is now selected.');
+  }
   const status = $('#licenseStatus');
   status.textContent = result.valid ? 'Plus is active on this device.' : result.reason === 'offline' ? 'Offline. Using the last verified license state.' : result.reason === 'missing' ? '' : 'This license is no longer active.';
   render(); renderLaneSettings();
@@ -476,6 +481,10 @@ async function init(): Promise<void> {
     Object.assign(preferences, structuredClone(defaultPreferences));
     localStorage.removeItem(preferencesKey);
     captions = structuredClone(demoCaptions);
+    // Switch the direct /demo document before the first asynchronous storage
+    // operation so the landing hero can never paint and then move the room.
+    await startRoom(true);
+    document.documentElement.classList.remove('demo-route-pending');
     await replaceCaptions(captions, databaseName);
   } else {
     captureReturnedLicense();
@@ -488,8 +497,7 @@ async function init(): Promise<void> {
   $('#sizeOutput').textContent = `${preferences.captionSize} px`;
   $<HTMLInputElement>('#hideUncertain').checked = preferences.hideUncertain;
   bindEvents(); render(); renderLaneSettings(); updateConnectivity();
-  if (demoMode) await startRoom(true);
-  else void updateLicense();
+  if (!demoMode) void updateLicense();
   void registerServiceWorker();
 }
 

@@ -25,6 +25,9 @@ This says what the product does, names its audience, and gives the first action 
 | Offline: The installed app opens after one online visit. | 9 | Pass |
 | Price: Three lanes are free. | 5 | Pass |
 | A fourth costs $24 once. | 5 | Pass |
+| Caption text stays here | 4 | Pass |
+| You’re offline. | 2 | Pass |
+| Use typed captions if live speech is unavailable. | 8 | Pass |
 
 ## Setup and explanation
 
