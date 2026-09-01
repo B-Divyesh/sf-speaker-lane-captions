@@ -48,10 +48,12 @@ jobs:
             android/app/build/outputs/apk/debug/app-debug.apk
             android/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
             artifacts/android-apk-sha256.txt
-      - name: Run packaged Capacitor bridge on Android 35 emulator
+      - name: Run packaged Capacitor bridge on Android 12 emulator
         uses: reactivecircus/android-emulator-runner@v2
         with:
-          api-level: 35
+          api-level: 31
           arch: x86_64
           profile: pixel_2
-          script: cd android && ./gradlew :app:connectedDebugAndroidTest --console=plain
+          disable-animations: true
+          emulator-options: -no-snapshot -noaudio -no-boot-anim -camera-back none -gpu swiftshader_indirect
+          script: cd android && ./gradlew --no-daemon :app:connectedDebugAndroidTest --console=plain --stacktrace

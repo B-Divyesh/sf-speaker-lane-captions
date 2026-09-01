@@ -81,7 +81,7 @@
     "claim": "Caption Lanes builds an Android app with native on-device captions, coarse left/centre/right direction confidence, and a mono manual fallback.",
     "where": "README Android project section",
     "test": "npm run test:android",
-    "sandbox": "clean Android SDK and JDK worker; sync web assets, unit-test native direction vectors, assemble debug and Android-test APKs, then exercise left/centre/right confidence and mono fallback through the packaged Capacitor bridge on Android 35"
+    "sandbox": "clean Android SDK and JDK worker; sync web assets, unit-test native direction vectors, assemble debug and Android-test APKs, then exercise left/centre/right confidence and mono fallback through the packaged Capacitor bridge on Android 12"
   },
   {
     "id": "plus-license",

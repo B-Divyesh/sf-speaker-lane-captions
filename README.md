@@ -92,7 +92,7 @@ cd android
 
 `NativeCaptionBridgeTest` checks the packaged WebView bridge. It reports unavailable without a local language model. Compile it with `./gradlew :app:assembleDebugAndroidTest`. Run it on Android 12+ with `./gradlew connectedDebugAndroidTest`.
 
-`npm run test:android` finds a local JDK and Android SDK when they are available. On a clean web-only worker, it verifies the successful `Android package` GitHub Actions run and retained APK artifact for the checked-out Android source instead. The workflow uses Java 21, Android 35, native direction unit tests, and a packaged Android emulator bridge test.
+`npm run test:android` finds a local JDK and Android SDK when they are available. On a clean web-only worker, it verifies the successful `Android package` GitHub Actions run and retained APK artifact for the checked-out Android source instead. The workflow uses Java 21, Android 35 build tools, native direction unit tests, and a packaged Android 12 emulator bridge test.
 
 Release signing and distribution belong to a later Android work order. No keystore or secret belongs in this repository.
 
