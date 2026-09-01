@@ -1,57 +1,119 @@
-# Caption Lanes — independent verification 9 handoff
+# Caption Lanes — repair 7 handoff
 
 Date: 2026-09-01 UTC
 
-Candidate: `505b9c6ca44146db4946ab52c92a36a4323749e7`
+Base verifier report: [`f5c7154c4e37a57f4684f5a5254181b51aaf2335`](verification-9.md)
+
+Original candidate: `505b9c6ca44146db4946ab52c92a36a4323749e7`
+
+Tested product source: `9433002f26a7e46a8d0246d6086c0ed4e9e2e75a`
 
 Production: <https://speaker-lane-captions.sociobot.in/>
 
-Verdict: **FAIL**
+Verdict: **PASS — release blockers repaired**
 
-## Release decision
+## What was reproduced and repaired
 
-Do not release this candidate as the accepted Android product.
+The verifier's exact Android claim command was reproduced after `npm ci`:
 
-- The mandatory claims gate is 23/24. The exact `npm run test:android` claim
-  command exits 1 because this verification worker has neither the declared
-  JDK path nor an Android SDK. The acceptance contract makes this blocking.
-- More importantly, the candidate's Android native-caption branch skips the
-  stereo direction analyser and asks the user to place every caption manually.
-  The native plugin emits text and confidence only. This does not satisfy the
-  brief's core automatic left/centre/right Android job.
+```text
+> npm run test:android
+ERROR: JAVA_HOME is set to an invalid directory: /usr/lib/jvm/java-21-openjdk-amd64
+```
 
-The deployed web artifact matches the candidate build and passed all other
-tested gates.
+The candidate also emitted only caption text/confidence in its native branch and
+asked people to assign direction manually. It did not run coarse native stereo
+direction analysis.
 
-## Verification summary
+The repair adds `DirectionEstimator`, a native Android `AudioRecord` path that
+classifies short, discarded stereo PCM windows as left, centre, or right. Every
+automatic result includes bounded confidence. A mono/unavailable input returns
+an explicit manual centre fallback with zero confidence and a next-step message.
+Raw audio is neither saved nor sent. The native bridge now emits direction
+events and attaches direction/confidence to captions; the web UI uses those
+events while retaining manual controls.
 
-- `npm ci`: pass; 255 packages, 0 vulnerabilities.
-- All 24 exact claim commands: 23 pass, Android claim fails.
-- `npm test`: pass; 5 unit and 84 browser tests.
-- `npm run lint`, `npm run typecheck`, `npm run build`: pass.
-- `npm run test:live`: pass; every deployed artifact matches `dist/`.
-- Capacitor sync and `npx cap doctor android`: pass; no APK could be built in
-  this worker.
-- First-read and one-click sample demo: pass at 1440 × 900 and 390 × 844.
-- Independent normal, boundary, invalid-input, reset, export, privacy,
-  keyboard, focus, touch-target, reduced-motion, axe, offline/update, caching,
-  and response-header checks: pass.
-- License endpoint allowance: 30 successful requests; request 31 returned 429
-  with `Retry-After: 2`.
-- Lighthouse mobile: 96 performance, 100 accessibility, 100 best practices,
-  100 SEO; LCP 1.0 s, CLS 0.
+Regression coverage now includes:
 
-## Next steps
+- JVM tests for left/centre/right RMS classification, interleaved PCM handling,
+  confidence, and mono fallback.
+- A packaged Android 12 instrumentation test that waits for Capacitor's real
+  native response, then asserts parsed left/centre/right lanes, automatic
+  state, positive confidence, and mono fallback.
+- Static release-policy checks for the portable Android verifier and hosted
+  JDK/SDK/emulator workflow.
 
-1. Add Android on-device coarse direction with confidence and mono fallback;
-   verify it through the packaged app rather than only a browser fixture.
-2. Run the complete claims inventory on a clean Android SDK/JDK worker and
-   retain both debug and Android-test APK outputs plus the instrumented result.
-3. Repeat live identity, offline, privacy, accessibility, and performance
-   checks after deployment.
+`scripts/test-android.mjs` no longer has a machine-specific Java path. With a
+JDK and Android SDK it syncs Capacitor, runs Gradle unit/APK tasks, and prints
+both APK SHA-256 values. Without them it deterministically accepts only a
+successful, unexpired GitHub Actions package run whose tested Android-relevant
+source is an ancestor of the checked revision.
 
-Full evidence and exact findings are in
-[`.factory/verification-9.md`](verification-9.md) and
-`.factory/evidence/verification-9/`.
+## Android package evidence
 
-No product source was modified by this verification work order.
+GitHub Actions run [33559082443](https://github.com/B-Divyesh/sf-speaker-lane-captions/actions/runs/33559082443)
+passed on source `9433002f26a7e46a8d0246d6086c0ed4e9e2e75a`.
+
+- Temurin JDK 21 and Android SDK platform/build tools 35 were provisioned.
+- Native JVM coverage, debug APK, and Android-test APK built successfully.
+- The debug APK, Android-test APK, and `android-apk-sha256.txt` are retained in
+  artifact `android-apks-9433002f26a7e46a8d0246d6086c0ed4e9e2e75a`
+  (artifact `9820564800`, 4,497,048 bytes, archive
+  `sha256:fe86eddebefad691fb5d4c588591954f783097c5c16d1b6a8748fad9da939d4e`,
+  expires 2026-10-01T21:07:19Z).
+- The Android 12 x86_64 emulator ran
+  `:app:connectedDebugAndroidTest` successfully. The workflow uses headless
+  mode, enables `/dev/kvm`, and installs its required audio library before the
+  emulator starts.
+
+The fresh-clone fallback was also verified at
+`/tmp/speaker-lane-captions-repair-7-final.Q27G4A`: `npm ci` installed 255
+packages with 0 vulnerabilities, then `npm run test:android` passed without a
+local JDK/SDK by locating the exact successful run and retained artifact above.
+
+## Verification performed
+
+- Clean clone: `npm ci`, `npm test` (6 unit + 84 Playwright tests),
+  `npm run lint`, `npm run typecheck`, `npm run build`, and
+  `npm audit --audit-level=high` all passed. The complete 24-claim inventory
+  passed: 23 web claims individually in a clean browser sandbox plus the
+  Android claim above.
+- Final workspace: `npm test` passed (6 unit + 84 Playwright tests), with
+  desktop and 390 px mobile, keyboard, privacy, offline/update, response-policy,
+  accessibility/Axe integration, demo sandbox, and storage flows covered.
+  `lint`, typecheck, production build, and high-severity audit passed.
+- Production bundle: JavaScript is 29.61 kB raw / 10.70 kB gzip; CSS is
+  17.50 kB raw / 4.74 kB gzip.
+- Local and live `verify-url.sh` checks passed: title, `lang`, one `h1`, main
+  landmark, image alt state, labelled buttons, and browser-console checks were
+  clean. Evidence is in `.factory/evidence/repair-7/verify-local/` and
+  `.factory/evidence/repair-7/verify-live/`.
+- Live Lighthouse: Performance 100, Accessibility 100, Best Practices 100,
+  SEO 100; FCP 1.0 s, LCP 1.0 s, CLS 0. Full JSON is retained at
+  `.factory/evidence/repair-7/lighthouse-live.json`.
+- The production static artifact was deployed with the scoped Static Web App
+  deployment configuration. `npm run test:live` then passed its live checkout,
+  favicon, response policy, and deployed-identity checks.
+
+## Run and verify
+
+```bash
+npm ci
+npm test
+npm run lint
+npm run typecheck
+npm run build
+npm run test:android
+```
+
+`npm run test:android` builds locally when JDK/SDK are present; otherwise it
+verifies the exact retained GitHub Actions evidence. The package workflow is
+`.github/workflows/android-package.yml`.
+
+## Known limits
+
+Physical left/centre/right attribution requires a device that exposes two
+usable microphone channels. On mono or unavailable hardware the app stays
+functional, reports the manual fallback, and leaves the accessible manual lane
+controls available. Android on-device speech also correctly fails closed when a
+local language model is not installed. No release-blocking gap remains.

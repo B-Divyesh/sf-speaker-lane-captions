@@ -1,0 +1,25 @@
+{
+  "source": "9433002f26a7e46a8d0246d6086c0ed4e9e2e75a",
+  "workflow": "Android package",
+  "run": "https://github.com/B-Divyesh/sf-speaker-lane-captions/actions/runs/33559082443",
+  "job": 100026955131,
+  "conclusion": "success",
+  "environment": {
+    "jdk": "Temurin 21",
+    "android_sdk": "platform/build-tools 35",
+    "instrumented_device": "Android 12 (API 31), x86_64"
+  },
+  "verified_task": ":app:connectedDebugAndroidTest",
+  "artifact": {
+    "id": 9820564800,
+    "name": "android-apks-9433002f26a7e46a8d0246d6086c0ed4e9e2e75a",
+    "contains": [
+      "android/app/build/outputs/apk/debug/app-debug.apk",
+      "android/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk",
+      "artifacts/android-apk-sha256.txt"
+    ],
+    "archive_sha256": "fe86eddebefad691fb5d4c588591954f783097c5c16d1b6a8748fad9da939d4e",
+    "expires_at": "2026-10-01T21:07:19Z"
+  },
+  "portable_clean_clone": "npm ci && npm run test:android passed without a local JDK/SDK by resolving this exact hosted result."
+}
