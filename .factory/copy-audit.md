@@ -114,7 +114,7 @@ No audited product copy uses: leverage, seamless, effortless, robust, powerful, 
 
 No sentence exceeds 22 words. No flagged wording remains.
 
-## README changes in polish 2
+## README changes in polish 2 and 3
 
 | Copy | Words | Status |
 | --- | ---: | --- |
@@ -123,3 +123,8 @@ No sentence exceeds 22 words. No flagged wording remains.
 | It fails closed when Android has no local speech language installed, while typed captions remain available. | 16 | Pass |
 | NativeCaptionBridgeTest checks the packaged WebView bridge. | 5 | Pass |
 | It reports unavailable without a local language model. | 8 | Pass |
+| While captions run, the app measures a two-channel microphone locally. | 10 | Pass |
+| It uses that measurement for a coarse Left, Centre, or Right lane. | 12 | Pass |
+| It shows direction confidence. | 4 | Pass |
+| `npm run test:android` builds locally when a JDK and Android SDK are available. | 13 | Pass |
+| On web-only workers, it checks the matching Android package run and retained APK artifact. | 13 | Pass |

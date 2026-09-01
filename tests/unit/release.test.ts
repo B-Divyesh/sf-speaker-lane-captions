@@ -37,7 +37,7 @@ describe('static release policy', () => {
     expect(home).toContain('id="how-it-works"');
     expect(home).toContain('Privacy and limits');
     expect(home).toContain('Plus costs $24 once.');
-    expect(home).toContain('Built by Param Factory · v1.0.0 · polish 2');
+    expect(home).toContain('Built by Param Factory · v1.0.0 · polish 3');
     for (const route of [privacy, terms, notFound]) {
       expect(route).toContain('class="skip-link" href="#main"');
       expect(route).toContain('property="og:type"');
@@ -47,7 +47,7 @@ describe('static release policy', () => {
       expect(route).toContain('name="twitter:image"');
       expect(route).toContain('rel="apple-touch-icon"');
       expect(route).toContain('aria-label="Main navigation"');
-      expect(route).toContain('Built by Param Factory · v1.0.0 · polish 2');
+      expect(route).toContain('Built by Param Factory · v1.0.0 · polish 3');
     }
     expect(notFound).toContain('<title>Page not found — Caption Lanes</title>');
     expect(notFound).toContain('<main id="main"');

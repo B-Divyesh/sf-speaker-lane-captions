@@ -1,1 +1,1 @@
-Place live captions in direction lanes for clearer small-group conversations.
+Place live captions in left, centre, and right lanes for small-group conversations.
