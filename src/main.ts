@@ -48,9 +48,22 @@ let mediaStream: MediaStream | null = null;
 let audioContext: AudioContext | null = null;
 let directionTimer = 0;
 
-const speech = new OnDeviceSpeech(addSpeechCaption, showMicError, (listening) => {
-  $('#room-status').textContent = listening ? 'Listening · audio stays on this device' : paused ? 'Paused · microphone is off' : 'Ready · audio stays on this device';
-});
+const speech = new OnDeviceSpeech(
+  addSpeechCaption,
+  showMicError,
+  (listening) => {
+    $('#room-status').textContent = listening ? 'Listening · audio stays on this device' : paused ? 'Paused · microphone is off' : 'Ready · audio stays on this device';
+  },
+  (direction) => {
+    if (direction.automatic) {
+      activeLane = direction.lane;
+      directionConfidence = direction.confidence;
+    } else {
+      directionConfidence = null;
+    }
+    render();
+  }
+);
 
 function isDemoUrl(): boolean {
   return location.pathname.replace(/\/+$/, '') === '/demo' || new URLSearchParams(location.search).get('demo') === '1';
@@ -256,7 +269,9 @@ async function addCaption(text: string, confidence: number | null, source: 'spee
   lane?.querySelector('.utterances')?.scrollTo({ top: 99999, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
 }
 
-function addSpeechCaption(caption: { text: string; confidence: number | null }): void {
+function addSpeechCaption(caption: { text: string; confidence: number | null; direction?: Exclude<LaneId, 'across'>; directionConfidence?: number }): void {
+  if (caption.direction) activeLane = caption.direction;
+  if (caption.directionConfidence !== undefined) directionConfidence = caption.directionConfidence;
   if (!paused) void addCaption(caption.text, caption.confidence, 'speech');
 }
 
@@ -286,11 +301,7 @@ async function startRoom(practice = false): Promise<void> {
     return;
   }
   if (await speech.start()) {
-    if (speech.usesNativeBridge()) {
-      showMicError('On-device Android captions are active. Choose Left, Centre, or Right when the speaker changes.');
-    } else {
-      await startDirectionAudio();
-    }
+    if (!speech.usesNativeBridge()) await startDirectionAudio();
   }
 }
 

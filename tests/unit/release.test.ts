@@ -75,4 +75,26 @@ describe('static release policy', () => {
     expect(copyAudit).toContain('No sentence exceeds 22 words. No flagged wording remains.');
     expect(copyAudit).not.toContain('| Flag |');
   });
+
+  it('keeps the Android claim portable and packages its direction regression evidence', async () => {
+    const [packageJson, androidRunner, workflow, plugin, directionTest] = await Promise.all([
+      readFile('package.json', 'utf8'),
+      readFile('scripts/test-android.mjs', 'utf8'),
+      readFile('.github/workflows/android-package.yml', 'utf8'),
+      readFile('android/app/src/main/java/in/sociobot/speakerlanecaptions/NativeCaptionPlugin.java', 'utf8'),
+      readFile('android/app/src/test/java/in/sociobot/speakerlanecaptions/DirectionEstimatorTest.java', 'utf8')
+    ]);
+    expect(packageJson).toContain('"test:android": "node scripts/test-android.mjs"');
+    expect(androidRunner).toContain('verifyHostedAndroidEvidence');
+    expect(androidRunner).toContain(':app:testDebugUnitTest');
+    expect(workflow).toContain('actions/setup-java@v4');
+    expect(workflow).toContain('android-actions/setup-android@v3');
+    expect(workflow).toContain(':app:connectedDebugAndroidTest');
+    expect(workflow).toContain('android-apks-${{ github.sha }}');
+    expect(plugin).toContain('startDirectionTracking()');
+    expect(plugin).toContain('event.put("direction", direction.lane)');
+    expect(plugin).toContain('event.put("directionConfidence", direction.confidence)');
+    expect(directionTest).toContain('classifiesLeftCentreAndRightWithConfidence');
+    expect(directionTest).toContain('exposesManualFallbackForMonoOrUnavailableInput');
+  });
 });

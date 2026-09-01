@@ -1,8 +1,19 @@
 import { Capacitor, registerPlugin } from '@capacitor/core';
+import type { LaneId } from './types';
 
 export interface SpeechCaption {
   text: string;
   confidence: number | null;
+  direction?: Extract<LaneId, 'left' | 'center' | 'right'>;
+  directionConfidence?: number;
+  directionAvailable?: boolean;
+}
+
+export interface NativeDirection {
+  lane: Extract<LaneId, 'left' | 'center' | 'right'>;
+  confidence: number;
+  automatic: boolean;
+  message?: string;
 }
 
 interface SpeechRecognitionEventLike extends Event {
@@ -35,6 +46,7 @@ interface NativeCaptionBridge {
   start(): Promise<void>;
   stop(): Promise<void>;
   addListener(eventName: 'caption', listenerFunc: (event: SpeechCaption) => void): Promise<{ remove: () => Promise<void> }>;
+  addListener(eventName: 'direction', listenerFunc: (event: NativeDirection) => void): Promise<{ remove: () => Promise<void> }>;
   addListener(eventName: 'error', listenerFunc: (event: { message: string }) => void): Promise<{ remove: () => Promise<void> }>;
 }
 
@@ -49,7 +61,8 @@ export class OnDeviceSpeech {
   constructor(
     private onCaption: (caption: SpeechCaption) => void,
     private onError: (message: string) => void,
-    private onState: (listening: boolean) => void
+    private onState: (listening: boolean) => void,
+    private onDirection: (direction: NativeDirection) => void
   ) {}
 
   supported(): boolean {
@@ -149,7 +162,11 @@ export class OnDeviceSpeech {
         return false;
       }
       this.nativeListeners.push(await NativeCaption.addListener('caption', (caption) => {
-        if (caption.text.trim()) this.onCaption({ text: caption.text, confidence: caption.confidence });
+        if (caption.text.trim()) this.onCaption(caption);
+      }));
+      this.nativeListeners.push(await NativeCaption.addListener('direction', (direction) => {
+        this.onDirection(direction);
+        if (!direction.automatic) this.onError(direction.message || 'This Android microphone has one channel, so choose a direction manually.');
       }));
       this.nativeListeners.push(await NativeCaption.addListener('error', ({ message }) => this.onError(message)));
       await NativeCaption.start();

@@ -12,7 +12,7 @@
     "test": "vitest run && playwright test",
     "test:unit": "vitest run",
     "test:e2e": "playwright test",
-    "test:android": "npm run cap:sync && cd android && ANDROID_HOME=${ANDROID_HOME:-/opt/android-sdk} JAVA_HOME=${JAVA_HOME:-/usr/lib/jvm/java-21-openjdk-amd64} ./gradlew :app:assembleDebug :app:assembleDebugAndroidTest --console=plain",
+    "test:android": "node scripts/test-android.mjs",
     "test:live": "node scripts/verify-live.mjs",
     "cap:sync": "npm run build && cap sync android"
   },

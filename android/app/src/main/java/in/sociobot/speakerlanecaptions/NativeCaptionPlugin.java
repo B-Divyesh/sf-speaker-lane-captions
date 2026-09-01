@@ -32,6 +32,8 @@ import java.util.ArrayList;
 )
 public class NativeCaptionPlugin extends Plugin {
     private SpeechRecognizer recognizer;
+    private DirectionEstimator directionEstimator;
+    private volatile DirectionEstimator.DirectionEstimate latestDirection = DirectionEstimator.manualEstimate();
     private boolean listening = false;
 
     @PluginMethod
@@ -66,6 +68,21 @@ public class NativeCaptionPlugin extends Plugin {
     public void stop(PluginCall call) {
         stopRecognizer();
         call.resolve();
+    }
+
+    /**
+     * A deterministic bridge probe used by the packaged instrumentation test.
+     * It runs the same classifier as the live AudioRecord path without asking
+     * for audio permission or retaining microphone data.
+     */
+    @PluginMethod
+    public void directionProbe(PluginCall call) {
+        JSObject result = new JSObject();
+        result.put("left", directionObject(DirectionEstimator.fromRms(0.30d, 0.04d)));
+        result.put("center", directionObject(DirectionEstimator.fromRms(0.20d, 0.20d)));
+        result.put("right", directionObject(DirectionEstimator.fromRms(0.04d, 0.30d)));
+        result.put("mono", directionObject(DirectionEstimator.manualEstimate()));
+        call.resolve(result);
     }
 
     @Override
@@ -124,6 +141,9 @@ public class NativeCaptionPlugin extends Plugin {
         });
         listening = true;
         recognizer.startListening(recognizerIntent());
+        // Start recognition first so captioning remains available if Android
+        // refuses a second microphone client for directional analysis.
+        startDirectionTracking();
         call.resolve();
     }
 
@@ -143,7 +163,35 @@ public class NativeCaptionPlugin extends Plugin {
         event.put("text", values.get(0).trim());
         float[] confidence = results.getFloatArray(SpeechRecognizer.CONFIDENCE_SCORES);
         event.put("confidence", confidence != null && confidence.length > 0 && confidence[0] >= 0 ? confidence[0] : null);
+        DirectionEstimator.DirectionEstimate direction = latestDirection;
+        event.put("directionAvailable", direction.automatic);
+        if (direction.automatic) {
+            event.put("direction", direction.lane);
+            event.put("directionConfidence", direction.confidence);
+        }
         notifyListeners("caption", event);
+    }
+
+    private void startDirectionTracking() {
+        stopDirectionTracking();
+        directionEstimator = new DirectionEstimator(getContext(), estimate -> {
+            latestDirection = estimate;
+            if (getActivity() == null) return;
+            getActivity().runOnUiThread(() -> {
+                JSObject event = directionObject(estimate);
+                notifyListeners("direction", event);
+            });
+        });
+        directionEstimator.start();
+    }
+
+    private JSObject directionObject(DirectionEstimator.DirectionEstimate estimate) {
+        JSObject event = new JSObject();
+        event.put("lane", estimate.lane);
+        event.put("confidence", estimate.confidence);
+        event.put("automatic", estimate.automatic);
+        if (!estimate.message.isEmpty()) event.put("message", estimate.message);
+        return event;
     }
 
     private void restartIfListening() {
@@ -152,11 +200,20 @@ public class NativeCaptionPlugin extends Plugin {
 
     private void stopRecognizer() {
         listening = false;
+        stopDirectionTracking();
         if (recognizer != null) {
             recognizer.cancel();
             recognizer.destroy();
             recognizer = null;
         }
+    }
+
+    private void stopDirectionTracking() {
+        if (directionEstimator != null) {
+            directionEstimator.stop();
+            directionEstimator = null;
+        }
+        latestDirection = DirectionEstimator.manualEstimate();
     }
 
     private String errorMessage(int error) {

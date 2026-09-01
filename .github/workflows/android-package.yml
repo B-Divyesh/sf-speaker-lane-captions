@@ -1,0 +1,57 @@
+name: Android package
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  package-and-test:
+    name: Build, test, and retain APKs
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: gradle
+      - uses: android-actions/setup-android@v3
+      - name: Install Android 35 build tools
+        run: sdkmanager --install "platforms;android-35" "build-tools;35.0.0"
+      - name: Install web dependencies
+        run: npm ci
+      - name: Build debug and Android-test APKs with unit regression coverage
+        run: npm run test:android
+      - name: Run packaged Capacitor bridge on Android 35 emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          profile: pixel_2
+          script: cd android && ./gradlew :app:connectedDebugAndroidTest --console=plain
+      - name: Record APK checksums
+        run: |
+          mkdir -p artifacts
+          sha256sum android/app/build/outputs/apk/debug/app-debug.apk android/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk > artifacts/android-apk-sha256.txt
+          printf 'revision=%s\n' "$GITHUB_SHA" >> artifacts/android-apk-sha256.txt
+      - name: Retain debug, Android-test, and checksum evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-apks-${{ github.sha }}
+          if-no-files-found: error
+          retention-days: 30
+          path: |
+            android/app/build/outputs/apk/debug/app-debug.apk
+            android/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
+            artifacts/android-apk-sha256.txt
