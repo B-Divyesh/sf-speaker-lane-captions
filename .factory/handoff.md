@@ -1,36 +1,57 @@
-# Caption Lanes — polish 2 handoff
+# Caption Lanes — independent verification 9 handoff
 
-Date: 2026-08-30 UTC
+Date: 2026-09-01 UTC
 
-Repair commit: `e400d29d5399c651dac9bf7d1f25d71040d44adc`
+Candidate: `505b9c6ca44146db4946ab52c92a36a4323749e7`
 
 Production: <https://speaker-lane-captions.sociobot.in/>
 
-## Done
+Verdict: **FAIL**
 
-- Fixed demo entitlement isolation, refund wording/testing, README language, and the 390 px Privacy link.
-- Added a native Android 12+ on-device caption bridge and an instrumented bridge test; built debug and Android-test APKs.
-- Updated the claims inventory, claim enforcement, catalog description, and repair evidence.
-- Deployed the static artifact and cold-checked production.
+## Release decision
 
-## Verify
+Do not release this candidate as the accepted Android product.
 
-```sh
-npm ci
-npm test
-npm run lint
-npm run typecheck
-npm run build
-npm run test:android
-npm run test:live
-```
+- The mandatory claims gate is 23/24. The exact `npm run test:android` claim
+  command exits 1 because this verification worker has neither the declared
+  JDK path nor an Android SDK. The acceptance contract makes this blocking.
+- More importantly, the candidate's Android native-caption branch skips the
+  stereo direction analyser and asks the user to place every caption manually.
+  The native plugin emits text and confidence only. This does not satisfy the
+  brief's core automatic left/centre/right Android job.
 
-All 24 exact claim commands passed from a fresh clone. Production passed `verify-url.sh`, ten hosted-checkout redirects, direct route checks, live demo isolation, and axe scans at 390 px and 1366 px.
+The deployed web artifact matches the candidate build and passed all other
+tested gates.
 
-The debug APK is `android/app/build/outputs/apk/debug/app-debug.apk` after `npm run test:android`; SHA-256: `ae3631132c585ade3a53ce6d5b20ae506d75a6839613f4fed45dd4be817104dc`.
+## Verification summary
 
-## Known environment limit
+- `npm ci`: pass; 255 packages, 0 vulnerabilities.
+- All 24 exact claim commands: 23 pass, Android claim fails.
+- `npm test`: pass; 5 unit and 84 browser tests.
+- `npm run lint`, `npm run typecheck`, `npm run build`: pass.
+- `npm run test:live`: pass; every deployed artifact matches `dist/`.
+- Capacitor sync and `npx cap doctor android`: pass; no APK could be built in
+  this worker.
+- First-read and one-click sample demo: pass at 1440 × 900 and 390 × 844.
+- Independent normal, boundary, invalid-input, reset, export, privacy,
+  keyboard, focus, touch-target, reduced-motion, axe, offline/update, caching,
+  and response-header checks: pass.
+- License endpoint allowance: 30 successful requests; request 31 returned 429
+  with `Retry-After: 2`.
+- Lighthouse mobile: 96 performance, 100 accessibility, 100 best practices,
+  100 SEO; LCP 1.0 s, CLS 0.
 
-The Android instrumented test compiles and is ready for `connectedDebugAndroidTest` on Android 12+. This disposable worker cannot boot an emulator because the required 7.3 GB userdata partition exceeds its 2.9 GB free space. No unrun device test is described as completed.
+## Next steps
 
-See `.factory/polish-2.md` for the complete finding map and evidence paths.
+1. Add Android on-device coarse direction with confidence and mono fallback;
+   verify it through the packaged app rather than only a browser fixture.
+2. Run the complete claims inventory on a clean Android SDK/JDK worker and
+   retain both debug and Android-test APK outputs plus the instrumented result.
+3. Repeat live identity, offline, privacy, accessibility, and performance
+   checks after deployment.
+
+Full evidence and exact findings are in
+[`.factory/verification-9.md`](verification-9.md) and
+`.factory/evidence/verification-9/`.
+
+No product source was modified by this verification work order.
