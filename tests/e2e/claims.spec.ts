@@ -73,17 +73,64 @@ test('keeps a seeded demo separate from real data and a real Plus license @claim
   await expect(page.getByText('Temporary demo note')).toBeVisible();
   expect((await databaseEntries(page, 'demo:caption-lanes')).length).toBe(7);
 
+  await page.evaluate(async () => {
+    localStorage.setItem('demo:caption-lanes:legacy-setting', 'remove me');
+    sessionStorage.setItem('demo:caption-lanes:session', 'remove me too');
+    const database = await new Promise<IDBDatabase>((resolve, reject) => {
+      const request = indexedDB.open('demo:caption-lanes:legacy', 1);
+      request.onupgradeneeded = () => request.result.createObjectStore('captions', { keyPath: 'id' });
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+    database.close();
+  });
+
   await page.getByRole('button', { name: 'Reset demo' }).click();
   await expect(page.getByText('Temporary demo note')).toHaveCount(0);
   await expect(page.locator('.utterance')).toHaveCount(6);
   await expect(page.locator('.lane')).toHaveCount(3);
 
   await startForReal(page);
-  expect(await page.evaluate(async () => (await indexedDB.databases()).some(({ name }) => name === 'demo:caption-lanes'))).toBe(false);
+  expect(await page.evaluate(async () => (await indexedDB.databases()).some(({ name }) => name?.startsWith('demo:caption-lanes')))).toBe(false);
   expect(await page.evaluate(() => Object.keys(localStorage).filter((key) => key.startsWith('demo:')))).toEqual([]);
+  expect(await page.evaluate(() => Object.keys(sessionStorage).filter((key) => key.startsWith('demo:')))).toEqual([]);
+  expect(await page.evaluate(() => localStorage.getItem('sb_license:speaker-lane-captions'))).toBe('real-plus-license');
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('caption-lanes:preferences') || '{}').captionSize)).toBe(36);
   await page.getByRole('button', { name: 'Explore with typed captions' }).click();
   await expect(page.getByText('Real transcript stays private')).toBeVisible();
   await expect(page.locator('.lane')).toHaveCount(4);
+
+  await page.getByRole('link', { name: 'Demo' }).first().click();
+  await page.getByLabel(/Type a caption/).fill('Removed before legal navigation');
+  await page.getByRole('button', { name: 'Add to lane' }).click();
+  await page.getByRole('navigation', { name: 'Main navigation' }).getByRole('link', { name: 'Privacy' }).click();
+  await expect(page).toHaveURL(/\/privacy\/$/);
+  expect(await page.evaluate(async () => (await indexedDB.databases()).some(({ name }) => name?.startsWith('demo:caption-lanes')))).toBe(false);
+  expect(await page.evaluate(() => localStorage.getItem('sb_license:speaker-lane-captions'))).toBe('real-plus-license');
+  expect((await databaseEntries(page, 'caption-lanes')).some(({ text }) => text === 'Real transcript stays private')).toBe(true);
+});
+
+test('keeps the demo open and explains how to recover when deletion is blocked', async ({ page }) => {
+  await page.goto('/demo');
+  await page.evaluate(async () => {
+    const database = await new Promise<IDBDatabase>((resolve, reject) => {
+      const request = indexedDB.open('demo:caption-lanes', 1);
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+    Object.assign(window, { __blockedDemoDatabase: database });
+  });
+
+  await page.getByRole('button', { name: 'Start for real' }).click();
+  await expect(page).toHaveURL(/\/demo$/);
+  await expect(page.getByText('Sample data could not be removed. Close other Caption Lanes tabs, then try again.')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Start for real' })).toBeFocused();
+
+  await page.evaluate(() => {
+    (window as typeof window & { __blockedDemoDatabase: IDBDatabase }).__blockedDemoDatabase.close();
+  });
+  await startForReal(page);
+  await expect(page.getByRole('heading', { level: 1, name: 'Place live captions by speaker direction.' })).toBeFocused();
 });
 
 test('shows the three directional lanes and places captions manually @claim:directional-lanes', async ({ page }) => {
@@ -156,6 +203,10 @@ test('sends the demo flow only to its origin without microphone access @claim:lo
   await page.goto('/demo');
   await page.getByLabel(/Type a caption/).fill('Nothing leaves this demo.');
   await page.getByRole('button', { name: 'Add to lane' }).click();
+  await page.getByRole('button', { name: 'View Caption Lanes Plus' }).click();
+  await page.getByRole('link', { name: /Buy Caption Lanes Plus/ }).click();
+  await expect(page.getByText('Start for real before buying Caption Lanes Plus.')).toBeVisible();
+  await page.getByRole('button', { name: 'Close upgrade' }).click();
   const downloadPromise = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Export transcript' }).click();
   const download = await downloadPromise;

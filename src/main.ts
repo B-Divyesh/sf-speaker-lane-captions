@@ -1,5 +1,5 @@
 import './styles.css';
-import { clearCaptions, loadCaptions, replaceCaptions, saveCaption } from './db';
+import { clearCaptions, deleteCaptionDatabases, loadCaptions, replaceCaptions, saveCaption } from './db';
 import { captureReturnedLicense, optimisticUnlock, storeLicense, verifyLicense } from './license';
 import { OnDeviceSpeech } from './speech';
 import type { CaptionEntry, LaneId, Preferences } from './types';
@@ -16,6 +16,7 @@ const laneMeta: Record<LaneId, { arrow: string; empty: string }> = {
   across: { arrow: '↗', empty: 'A fourth manually selected voice will gather here.' }
 };
 const palette = ['#73c8c3', '#f2b96b', '#e58f8b', '#a8c97f', '#c4a7e7'];
+const demoStoragePrefix = 'demo:caption-lanes';
 const defaultPreferences: Preferences = {
   captionSize: 24,
   hideUncertain: false,
@@ -85,16 +86,19 @@ function savePreferences(): void {
   document.documentElement.style.setProperty('--caption-size', `${preferences.captionSize}px`);
 }
 
+function clearDemoStorageKeys(): void {
+  for (const storage of [localStorage, sessionStorage]) {
+    for (let index = storage.length - 1; index >= 0; index -= 1) {
+      const key = storage.key(index);
+      if (key?.startsWith(demoStoragePrefix)) storage.removeItem(key);
+    }
+  }
+}
+
 async function discardDemo(): Promise<void> {
   if (!demoMode) return;
-  await clearCaptions(databaseName);
-  await new Promise<void>((resolve) => {
-    const request = indexedDB.deleteDatabase(databaseName);
-    request.onsuccess = () => resolve();
-    request.onerror = () => resolve();
-    request.onblocked = () => resolve();
-  });
-  localStorage.removeItem(preferencesKey);
+  await deleteCaptionDatabases(demoStoragePrefix);
+  clearDemoStorageKeys();
 }
 
 function visibleLanes(): LaneId[] {
@@ -157,9 +161,9 @@ function announceRoute(): void {
   heading.focus({ preventScroll: true });
 }
 
-async function applyRoute(options: { focus?: boolean; consent?: boolean } = {}): Promise<void> {
+async function applyRoute(options: { focus?: boolean; consent?: boolean; demoDiscarded?: boolean } = {}): Promise<void> {
   const nextDemoMode = isDemoUrl();
-  if (demoMode && !nextDemoMode) await discardDemo();
+  if (demoMode && !nextDemoMode && !options.demoDiscarded) await discardDemo();
   stopAudio();
   paused = false;
   sessionMode = null;
@@ -175,6 +179,9 @@ async function applyRoute(options: { focus?: boolean; consent?: boolean } = {}):
     plus = false;
     activeLane = 'center';
     directionConfidence = null;
+    $<HTMLButtonElement>('#startForReal').disabled = false;
+    $('#startForReal').removeAttribute('aria-busy');
+    setDemoExitState('');
     localStorage.removeItem(preferencesKey);
     captions = structuredClone(demoCaptions);
     await replaceCaptions(captions, databaseName);
@@ -184,23 +191,26 @@ async function applyRoute(options: { focus?: boolean; consent?: boolean } = {}):
     captions = await loadCaptions(databaseName).catch(() => []);
     setActiveViewHeadings(false);
     $('#room').hidden = true;
-    $('#welcome').hidden = false;
     savePreferences();
     plus = optimisticUnlock();
     void updateLicense();
     render();
     renderLaneSettings();
+    // Reveal real-mode controls only after route state and stored data agree.
+    // This prevents a fast click from starting a room while exit is still finalizing.
+    $('#welcome').hidden = false;
     if (options.consent) $('#consent-panel').scrollIntoView({ block: 'start' });
   }
   if (options.focus !== false) announceRoute();
 }
 
-async function navigateApp(url: URL): Promise<void> {
+async function navigateApp(url: URL, options: { demoDiscarded?: boolean } = {}): Promise<void> {
   const consent = url.hash === '#consent-panel';
   const targetIsDemo = url.pathname.replace(/\/+$/, '') === '/demo' || url.searchParams.get('demo') === '1';
-  if (demoMode && !targetIsDemo) await discardDemo();
+  const leavingDemo = demoMode && !targetIsDemo;
+  if (leavingDemo && !options.demoDiscarded) await discardDemo();
   history.pushState({ appRoute: true }, '', `${url.pathname}${url.search}${url.hash}`);
-  await applyRoute({ consent });
+  await applyRoute({ consent, demoDiscarded: leavingDemo });
 }
 
 function render(): void {
@@ -350,6 +360,30 @@ function toast(message: string): void {
   window.setTimeout(() => { element.hidden = true; }, 4200);
 }
 
+function setDemoExitState(message: string, error = false): void {
+  const status = $('#demoExitStatus');
+  status.textContent = message;
+  status.hidden = !message;
+  status.classList.toggle('error', error);
+}
+
+async function leaveDemo(action: () => Promise<void> | void): Promise<void> {
+  const button = $<HTMLButtonElement>('#startForReal');
+  if (button.disabled || !demoMode) return;
+  button.disabled = true;
+  button.setAttribute('aria-busy', 'true');
+  setDemoExitState('Deleting sample changes…');
+  try {
+    await discardDemo();
+    await action();
+  } catch {
+    setDemoExitState('Sample data could not be removed. Close other Caption Lanes tabs, then try again.', true);
+    button.disabled = false;
+    button.removeAttribute('aria-busy');
+    button.focus();
+  }
+}
+
 function exportTranscript(): void {
   const payload = { product: 'Caption Lanes', exportedAt: new Date().toISOString(), rawAudioStored: false, captions };
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
@@ -454,23 +488,47 @@ function bindEvents(): void {
     await replaceCaptions(captions, databaseName);
     activeLane = 'center';
     render(); renderLaneSettings();
+    setDemoExitState('');
     toast('Sample conversation reset.');
     $<HTMLHeadingElement>('#room-title').focus();
   });
   $('#startForReal').addEventListener('click', async () => {
     if (!demoMode) return;
-    await navigateApp(new URL('/#consent-panel', location.href));
+    await leaveDemo(() => navigateApp(new URL('/#consent-panel', location.href), { demoDiscarded: true }));
   });
   document.querySelectorAll<HTMLAnchorElement>('a[href="/demo"], a[href="/?demo=1"]').forEach((link) => link.addEventListener('click', (event) => {
     event.preventDefault();
     void navigateApp(new URL('/demo', location.href));
   }));
-  window.addEventListener('popstate', () => { void applyRoute({ consent: location.hash === '#consent-panel' }); });
+  document.querySelectorAll<HTMLAnchorElement>('a[href]').forEach((link) => link.addEventListener('click', (event) => {
+    if (!demoMode || event.defaultPrevented) return;
+    const url = new URL(link.href, location.href);
+    const targetIsDemo = url.origin === location.origin && (url.pathname.replace(/\/+$/, '') === '/demo' || url.searchParams.get('demo') === '1');
+    if (targetIsDemo) return;
+    if (url.origin !== location.origin) {
+      if (url.hostname === 'api.sociobot.in') {
+        event.preventDefault();
+        toast('Start for real before buying Caption Lanes Plus.');
+      }
+      return;
+    }
+    event.preventDefault();
+    void leaveDemo(() => url.pathname === '/'
+      ? navigateApp(url, { demoDiscarded: true })
+      : location.assign(url.href));
+  }));
+  window.addEventListener('popstate', () => {
+    void applyRoute({ consent: location.hash === '#consent-panel' }).catch(() => {
+      history.replaceState({ appRoute: true }, '', '/demo');
+      updateRouteMetadata();
+      setDemoExitState('Sample data could not be removed. Close other Caption Lanes tabs, then try again.', true);
+    });
+  });
   window.addEventListener('pagehide', () => {
     stopAudio();
     if (demoMode) {
-      localStorage.removeItem(preferencesKey);
-      indexedDB.deleteDatabase(databaseName);
+      clearDemoStorageKeys();
+      void deleteCaptionDatabases(demoStoragePrefix).catch(() => { /* A foreground exit reports blocked cleanup. */ });
     }
   });
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') stopAudio(); });

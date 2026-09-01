@@ -93,6 +93,22 @@ describe('static release policy', () => {
     expect(readme).not.toContain('On a clean web-only worker, it verifies the successful `Android package` GitHub Actions run');
   });
 
+  it('keeps the catalog and demo-exit copy concrete and within their limits', async () => {
+    const [catalog, readme, terms, privacy] = await Promise.all([
+      readFile('.factory/catalog-description.txt', 'utf8'),
+      readFile('README.md', 'utf8'),
+      readFile('terms/index.html', 'utf8'),
+      readFile('privacy/index.html', 'utf8')
+    ]);
+    const description = catalog.trim();
+    expect(description).toMatch(/^Follow\b/);
+    expect(description.length).toBeLessThanOrEqual(120);
+    expect(readme).toContain('Start for real** waits until every demo database and setting is deleted');
+    expect(readme).toContain('Real captions, settings, and a Plus license remain unchanged.');
+    expect(terms).not.toContain('Refunds are handled there.');
+    expect(privacy).not.toContain('processes the purchase');
+  });
+
   it('keeps the Android claim portable and packages its direction regression evidence', async () => {
     const [packageJson, androidRunner, workflow, plugin, directionTest] = await Promise.all([
       readFile('package.json', 'utf8'),

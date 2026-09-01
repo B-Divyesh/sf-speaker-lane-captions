@@ -12,7 +12,9 @@ Open <https://speaker-lane-captions.sociobot.in/demo>, add `?demo=1` to the home
 
 The demo opens a six-caption conversation without a microphone. It keeps temporary data in a separate store named `demo:caption-lanes` and never reads real captions or settings.
 
-Use **Reset demo** to restore the sample. Use **Start for real** to delete the sample changes and return to setup.
+Use **Reset demo** to restore the sample. **Start for real** waits until every demo database and setting is deleted, then returns to setup.
+
+If another tab blocks deletion, the demo stays open and tells you to close that tab. Real captions, settings, and a Plus license remain unchanged.
 
 See [the demo contract](.factory/demo.md) for the sample and storage details.
 

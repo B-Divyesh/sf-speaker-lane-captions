@@ -1,10 +1,10 @@
 [
   {
     "id": "demo-isolation",
-    "claim": "The sample demo opens in one click and stays separate from real captions and settings.",
+    "claim": "The sample demo opens in one click, stays separate, and deletes every demo key before real mode opens.",
     "where": "landing action, demo banner, privacy page, README",
     "test": "npm run test:e2e -- --grep @claim:demo-isolation",
-    "sandbox": "fresh browser context; seed real IndexedDB data; exercise, reset, and leave /demo; compare both storage namespaces"
+    "sandbox": "fresh browser context in desktop and 390 px projects; seed real transcript, settings, and Plus data; exercise and reset /demo; seed extra demo databases and storage keys; leave through Start for real and Privacy; assert every demo key is gone and every real value remains"
   },
   {
     "id": "directional-lanes",

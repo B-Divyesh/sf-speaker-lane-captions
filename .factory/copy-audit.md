@@ -78,6 +78,10 @@ All remaining labels are short interface phrases, not prose sentences. They are 
 | Demo — sample data, nothing is saved | 7 | Pass |
 | Reset demo | 2 | Pass |
 | Start for real | 3 | Pass |
+| Deleting sample changes… | 3 | Pass |
+| Sample data could not be removed. | 6 | Pass |
+| Close other Caption Lanes tabs, then try again. | 8 | Pass |
+| Start for real before buying Caption Lanes Plus. | 8 | Pass |
 | Ready · audio stays on this device | 7 | Pass |
 | Tap when the phone cannot place a voice. | 8 | Pass |
 | Number keys 1–4 also work. | 5 | Pass |
@@ -128,3 +132,12 @@ No sentence exceeds 22 words. No flagged wording remains.
 | It shows direction confidence. | 4 | Pass |
 | `npm run test:android` builds locally when a JDK and Android SDK are available. | 13 | Pass |
 | On web-only workers, it checks the matching Android package run and retained APK artifact. | 13 | Pass |
+| Start for real waits until every demo database and setting is deleted, then returns to setup. | 15 | Pass; `demo-isolation` |
+| If another tab blocks deletion, the demo stays open and tells you to close that tab. | 15 | Pass; blocked-deletion browser test |
+| Real captions, settings, and a Plus license remain unchanged. | 9 | Pass; `demo-isolation` |
+
+## Catalog description
+
+| Copy | Characters | Status |
+| --- | ---: | --- |
+| Follow small-group conversations with live captions split into left, centre, and right lanes. | 93 | Pass; verb first and under 120 characters |
