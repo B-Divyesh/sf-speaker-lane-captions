@@ -1,27 +1,36 @@
-# Caption Lanes — polish 3 handoff
+# Caption Lanes — polish 3 retry 1 handoff
 
 Date: 2026-09-01 UTC
 
-Repair commit: `1c11f7093abbdeb9f24e05705d172006905e700d` (`fix: complete plain-language polish`).
+Outcome: **PASS — zero open findings**.
 
-Outcome: **PASS**. F-3-1 is fixed: the Android README now uses five clear 4–13-word sentences where review 3 found two 24–25-word sentences. The catalog description is now a verb-first, 12-word line. Every earlier review finding was rechecked against the current source and live site; none remains open.
+Repair commit: `f1f0391a0543cf2c9ebf88d49013e026f05cb0cc` (`fix: guarantee isolated demo cleanup`).
 
-What changed:
+## Delivered
 
-- Rewrote the Android microphone/direction explanation and Android verification explanation in plain language.
-- Added a unit regression test for each F-3-1 replacement and refreshed the copy audit.
-- Updated the shared footer build marker to polish 3 on the app, legal, offline, and not-found pages.
-- Kept the existing isolated `/demo` and `?demo=1` sample path, banner, reset/start-real behavior, claim inventory, routing, metadata, accessibility, local-first privacy, PWA, and Android bridge fixes verified.
+- Demo exit now waits for confirmed deletion of every `demo:caption-lanes*` IndexedDB database and local/session storage key.
+- IndexedDB errors and blocked connections no longer count as success. The demo stays open, explains how to recover, and returns focus to **Start for real**.
+- Real transcript data, real preferences, and `sb_license:speaker-lane-captions` remain untouched and return after demo exit.
+- Start for real, Home, Privacy, and Terms share the same awaited demo-exit gate. Demo checkout is blocked until real mode.
+- The one-click sample, direct `/demo`, and `?demo=1` all show six sample captions, three lanes, the persistent banner, Reset, and Start for real.
+- Removed the last untestable refund-processing copy. Kept the tested hosted-checkout fact and a purchase/refund support contact.
+- Updated the claim inventory, demo contract, copy audit, README, and the 93-character verb-first catalog description.
+- Preserved the cinematic dark-room visual system, Capacitor/Android artifact class, native speech bridge, PWA, legal pages, and real routing.
 
-Verification:
+## Verification evidence
 
-- Fresh clone at the repair commit: `npm ci` had zero audit vulnerabilities; all 24 exact `.factory/claims.json` commands passed. That includes 23 browser claims in desktop and 390 × 844 projects plus Android retained-package evidence.
-- Fresh clone: `npm test` passed 6 unit tests and 84 Playwright tests. Final workspace: `npm test` passed 7 unit tests and 84 Playwright tests, including the F-3-1 regression.
-- `npm run lint`, `npm run typecheck`, `npm run build`, and `npm audit --audit-level=high` passed. The build emits 10.70 kB gzip JavaScript and 4.74 kB gzip CSS.
-- Deployed with `swa deploy ./dist --app-name sf-speaker-lane-captions --env production`. `npm run test:live` then passed live artifact identity, headers, favicon, designed 404, and ten hosted-checkout redirects.
-- Production `verify-url.sh` passed with no console errors; see [verify.json](evidence/polish-3/verify-live/verify.json). Cold live mobile verification passed direct/one-click demo, reset, focus restoration, legal routes, axe, privacy request log, and offline reload. Live Lighthouse scored 100/100/100/100; see [lighthouse-mobile.json](evidence/polish-3/lighthouse-mobile.json).
+- Fresh clone at the repair commit: all 24 exact claim commands passed. Browser claims ran in desktop Chromium and exact 390 × 844 Chromium.
+- Fresh clone `npm test`: 9 unit tests and 86 browser runs passed.
+- `npm run lint`, `npm run typecheck`, `npm run build`, and `npm audit --audit-level=high`: passed.
+- Build size: 31.48 kB JS / 11.24 kB gzip; 17.70 kB CSS / 4.78 kB gzip.
+- `npm run test:android`: verified the exact successful [Android package run](https://github.com/B-Divyesh/sf-speaker-lane-captions/actions/runs/33569777621) and retained `android-apks-f1f0391a0543cf2c9ebf88d49013e026f05cb0cc` artifact.
+- Production deploy completed for `sf-speaker-lane-captions`; `npm run test:live` passed artifact identity, headers, favicon, checkout, and designed HTTP 404.
+- [Cold live checks](evidence/polish-3-retry1/live-checks.json) passed desktop/mobile deletion, blocked recovery, preserved real data, first-screen fit, route focus, metadata, legal links, 404, privacy, axe, and offline reload.
+- [Baseline verifier](evidence/polish-3-retry1/verify-live/verify.json): no console errors; title, lang, one h1, main, alt text, and button labels passed.
+- [Mobile Lighthouse](evidence/polish-3-retry1/lighthouse-mobile.json): 100 performance / 100 accessibility / 100 best practices / 100 SEO; LCP 1.1 s, CLS 0, TBT 0 ms.
+- Screenshots: [home](evidence/polish-3-retry1/live-mobile-home.png), [mobile demo](evidence/polish-3-retry1/live-mobile-demo.png), [desktop demo](evidence/polish-3-retry1/live-desktop-demo.png), and [blocked deletion](evidence/polish-3-retry1/live-mobile-delete-error.png).
 
-Run locally:
+## Run locally
 
 ```sh
 npm ci
@@ -32,4 +41,10 @@ npm run build
 npm run test:android
 ```
 
-Known gaps: none. The available worker has no complete JDK/Android SDK, so `npm run test:android` verifies the matching retained GitHub Actions APK/package evidence; it does not misrepresent that as a local emulator run.
+Run the production cold-check suite with:
+
+```sh
+node scripts/verify-polish-live.mjs https://speaker-lane-captions.sociobot.in .factory/evidence/polish-3-retry1
+```
+
+Known gaps: none.

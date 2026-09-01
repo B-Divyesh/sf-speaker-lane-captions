@@ -1,0 +1,28 @@
+{
+  "baseUrl": "https://speaker-lane-captions.sociobot.in",
+  "checkedAt": "2026-09-01T23:23:33.499Z",
+  "results": [
+    {
+      "check": "mobile demo isolation and first screen",
+      "status": "pass",
+      "demoRequests": [],
+      "errors": []
+    },
+    {
+      "check": "desktop demo isolation and route focus",
+      "status": "pass"
+    },
+    {
+      "check": "blocked demo deletion recovery",
+      "status": "pass"
+    },
+    {
+      "check": "routes, metadata, mobile navigation, and axe",
+      "status": "pass"
+    },
+    {
+      "check": "offline reload",
+      "status": "pass"
+    }
+  ]
+}
