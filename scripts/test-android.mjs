@@ -51,19 +51,28 @@ async function verifyHostedAndroidEvidence() {
   const revision = commandOutput('git', ['rev-parse', 'HEAD']);
   const headers = { Accept: 'application/vnd.github+json', 'User-Agent': 'speaker-lane-captions-android-verifier' };
   if (process.env.GITHUB_TOKEN) headers.Authorization = `Bearer ${process.env.GITHUB_TOKEN}`;
-  const runsUrl = `https://api.github.com/repos/${repository}/actions/workflows/android-package.yml/runs?head_sha=${revision}&status=completed&per_page=20`;
+  const runsUrl = `https://api.github.com/repos/${repository}/actions/workflows/android-package.yml/runs?status=completed&per_page=100`;
   const runsResponse = await fetch(runsUrl, { headers });
   if (!runsResponse.ok) throw new Error(`GitHub Actions lookup returned ${runsResponse.status}. Install a JDK and Android SDK to build locally.`);
   const runs = await runsResponse.json();
-  const successful = runs.workflow_runs?.find((run) => run.head_sha === revision && run.conclusion === 'success');
-  if (!successful) throw new Error(`No successful Android package workflow exists for ${revision}. Push this revision and wait for “Android package”, or install a JDK and Android SDK.`);
+  const successful = runs.workflow_runs?.find((candidate) => {
+    if (candidate.conclusion !== 'success') return false;
+    try {
+      run('git', ['merge-base', '--is-ancestor', candidate.head_sha, revision]);
+      const changedAfterTest = commandOutput('git', ['diff', '--name-only', `${candidate.head_sha}..${revision}`]).split('\n').filter(Boolean);
+      return !changedAfterTest.some((path) => /^(android\/|src\/|package(?:-lock)?\.json$|capacitor\.config\.ts$|scripts\/test-android\.mjs$|\.github\/workflows\/android-package\.yml$)/.test(path));
+    } catch {
+      return false;
+    }
+  });
+  if (!successful) throw new Error(`No successful Android package workflow covers the Android source in ${revision}. Push this source and wait for “Android package”, or install a JDK and Android SDK.`);
   const artifactsResponse = await fetch(successful.artifacts_url, { headers });
   if (!artifactsResponse.ok) throw new Error(`GitHub Actions artifact lookup returned ${artifactsResponse.status}.`);
   const artifacts = await artifactsResponse.json();
-  const expected = `android-apks-${revision}`;
+  const expected = `android-apks-${successful.head_sha}`;
   const artifact = artifacts.artifacts?.find((item) => item.name === expected && !item.expired);
   if (!artifact) throw new Error(`The successful Android package workflow did not retain ${expected}.`);
-  console.log(`Verified hosted Android evidence: run ${successful.html_url}`);
+  console.log(`Verified hosted Android evidence for source ${successful.head_sha}: run ${successful.html_url}`);
   console.log(`Verified retained debug/test APK artifact: ${artifact.name} (id ${artifact.id}).`);
 }
 
