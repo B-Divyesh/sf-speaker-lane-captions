@@ -46,22 +46,35 @@ public class NativeCaptionBridgeTest {
     }
 
     private String invokeWhenBridgeReady(ActivityScenario<MainActivity> scenario, String method) throws Exception {
-        CountDownLatch latch = new CountDownLatch(1);
-        AtomicReference<String> response = new AtomicReference<>();
-        String script = "(async()=>{const deadline=Date.now()+12000;"
+        String resultKey = "__nativeCaption" + method + "Result";
+        String script = "window." + resultKey + "=null;(async()=>{const deadline=Date.now()+12000;"
             + "const header=()=>window.Capacitor&&Array.isArray(window.Capacitor.PluginHeaders)&&"
             + "window.Capacitor.PluginHeaders.some(plugin=>plugin.name==='NativeCaption'&&"
             + "plugin.methods.some(entry=>entry.name==='" + method + "'));"
             + "while(!(window.Capacitor&&window.Capacitor.nativePromise&&header())){"
-            + "if(Date.now()>deadline)return JSON.stringify({error:'NativeCaption bridge did not initialize'});"
+            + "if(Date.now()>deadline){window." + resultKey + "=JSON.stringify({error:'NativeCaption bridge did not initialize'});return;}"
             + "await new Promise(resolve=>setTimeout(resolve,50));}"
-            + "try{return JSON.stringify(await window.Capacitor.nativePromise('NativeCaption','" + method + "',{}));}"
-            + "catch(error){return JSON.stringify({error:String(error)});}})()";
+            + "try{window." + resultKey + "=JSON.stringify(await window.Capacitor.nativePromise('NativeCaption','" + method + "',{}));}"
+            + "catch(error){window." + resultKey + "=JSON.stringify({error:String(error)});}})();";
+        evaluateJavascript(scenario, script);
+
+        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(15);
+        while (System.nanoTime() < deadline) {
+            String result = evaluateJavascript(scenario, "window." + resultKey);
+            if (!"null".equals(result)) return result;
+            Thread.sleep(50);
+        }
+        throw new AssertionError("NativeCaption " + method + " never returned");
+    }
+
+    private String evaluateJavascript(ActivityScenario<MainActivity> scenario, String script) throws Exception {
+        CountDownLatch latch = new CountDownLatch(1);
+        AtomicReference<String> response = new AtomicReference<>();
         scenario.onActivity(activity -> activity.getBridge().getWebView().evaluateJavascript(
             script,
             value -> { response.set(value); latch.countDown(); }
         ));
-        assertTrue("NativeCaption " + method + " never returned", latch.await(15, TimeUnit.SECONDS));
+        assertTrue("WebView JavaScript did not return", latch.await(2, TimeUnit.SECONDS));
         return response.get();
     }
 
