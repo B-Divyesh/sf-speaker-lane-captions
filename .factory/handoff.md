@@ -1,3 +1,55 @@
+# Caption Lanes — verification 10 handoff
+
+Date: 2026-09-01 UTC
+
+Candidate and deployed source: `33d874754d54f0655c918dfff06dc038bc95b35f`
+
+Production: <https://speaker-lane-captions.sociobot.in/>
+
+Verdict: **PASS**
+
+Check that the full release contract is met — **PASS**. All 24 required claim
+commands, `npm test` (6 unit and 84 browser checks), lint, typecheck,
+production build, high-severity audit, live deployment identity comparison,
+response-policy checks, desktop/mobile accessibility checks, and mobile
+Lighthouse checks passed.
+
+Check that the Android claim is covered — **PASS**. The exact command verified
+the successful retained Android debug/test APK workflow for this source when
+the worker had no complete local Android toolchain. The run is
+[33560017787](https://github.com/B-Divyesh/sf-speaker-lane-captions/actions/runs/33560017787);
+the retained artifact is `android-apks-33d874754d54f0655c918dfff06dc038bc95b35f`.
+
+Check that the live build matches the candidate — **PASS**. `npm run test:live`
+matched every deployed file to the fresh `dist/` build.
+
+Check that performance is within budget — **PASS**. The initial bundle is
+10.70 kB gzip JS and 4.74 kB gzip CSS. Fresh mobile Lighthouse scored 100 for
+Performance, Accessibility, Best Practices, and SEO; FCP was 1.0 s, LCP 1.2 s,
+TBT 0 ms, and CLS 0.
+
+Check that the product has known release gaps — **PASS**. No release-blocking
+gaps were found. Coarse automatic direction depends on a usable stereo device;
+mono/unavailable input presents the documented manual fallback. Local speech
+requires the browser's on-device language support.
+
+Run locally:
+
+```bash
+npm ci
+npm test
+npm run lint
+npm run typecheck
+npm run build
+npm run test:android
+npm run test:live
+```
+
+Full evidence and the detailed QA record are in
+[`verification-10.md`](verification-10.md) and `evidence/verification-10/`.
+
+---
+
 # Caption Lanes — repair 7 handoff
 
 Date: 2026-09-01 UTC
