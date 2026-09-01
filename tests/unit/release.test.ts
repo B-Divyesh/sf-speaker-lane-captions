@@ -92,6 +92,7 @@ describe('static release policy', () => {
     expect(workflow).toContain(':app:connectedDebugAndroidTest');
     expect(workflow).toContain('api-level: 31');
     expect(workflow).toContain('libpulse0');
+    expect(workflow).toContain('-no-window');
     expect(workflow).toContain('android-apks-${{ github.sha }}');
     expect(plugin).toContain('startDirectionTracking()');
     expect(plugin).toContain('event.put("direction", direction.lane)');
