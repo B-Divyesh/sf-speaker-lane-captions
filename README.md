@@ -75,7 +75,7 @@ Azure Static Web Apps reads dist/staticwebapp.config.json. The factory owns DNS 
 
 The Capacitor wrapper is in `android/`. Its app ID is `in.sociobot.speakerlanecaptions`.
 
-Android 12 and newer use a native on-device speech bridge, not the WebView speech API. It fails closed when Android has no local speech language installed, while typed captions remain available.
+Android 12 and newer use a native on-device speech bridge, not the WebView speech API. While captions run, the app samples a two-channel microphone locally to place captions in a coarse Left, Centre, or Right lane and shows direction confidence. It discards every audio sample after measuring it. A one-channel or unavailable input keeps captions running and asks for manual lane choice. The app never infers identity or saves raw audio.
 
 Refresh native web assets:
 
@@ -91,6 +91,8 @@ cd android
 ~~~
 
 `NativeCaptionBridgeTest` checks the packaged WebView bridge. It reports unavailable without a local language model. Compile it with `./gradlew :app:assembleDebugAndroidTest`. Run it on Android 12+ with `./gradlew connectedDebugAndroidTest`.
+
+`npm run test:android` finds a local JDK and Android SDK when they are available. On a clean web-only worker, it verifies the successful `Android package` GitHub Actions run and retained APK artifact for the exact checked-out commit instead. The workflow uses Java 21, Android 35, native direction unit tests, and a packaged Android emulator bridge test.
 
 Release signing and distribution belong to a later Android work order. No keystore or secret belongs in this repository.
 
