@@ -76,6 +76,23 @@ describe('static release policy', () => {
     expect(copyAudit).not.toContain('| Flag |');
   });
 
+  it('keeps the repaired Android README sentences within the plain-language limit', async () => {
+    const readme = await readFile('README.md', 'utf8');
+    const sentences = [
+      'While captions run, the app measures a two-channel microphone locally.',
+      'It uses that measurement for a coarse Left, Centre, or Right lane.',
+      'It shows direction confidence.',
+      '`npm run test:android` builds locally when a JDK and Android SDK are available.',
+      'On web-only workers, it checks the matching Android package run and retained APK artifact.'
+    ];
+    for (const sentence of sentences) {
+      expect(readme).toContain(sentence);
+      expect(sentence.trim().split(/\s+/).length).toBeLessThanOrEqual(22);
+    }
+    expect(readme).not.toContain('While captions run, the app samples a two-channel microphone locally to place captions');
+    expect(readme).not.toContain('On a clean web-only worker, it verifies the successful `Android package` GitHub Actions run');
+  });
+
   it('keeps the Android claim portable and packages its direction regression evidence', async () => {
     const [packageJson, androidRunner, workflow, plugin, directionTest] = await Promise.all([
       readFile('package.json', 'utf8'),

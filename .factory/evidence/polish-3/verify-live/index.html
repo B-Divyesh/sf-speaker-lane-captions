@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#0c1110" />
+    <meta name="description" content="Place live captions into left, centre, and right lanes during small in-person conversations." />
+    <title>Caption Lanes — Place captions by speaker direction</title>
+    <link rel="canonical" href="https://speaker-lane-captions.sociobot.in/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Caption Lanes — Place captions by speaker direction" />
+    <meta property="og:description" content="Directional live captions for Deaf and hard-of-hearing people in small groups." />
+    <meta property="og:url" content="https://speaker-lane-captions.sociobot.in/" />
+    <meta property="og:image" content="https://speaker-lane-captions.sociobot.in/assets/social-1200x630.webp" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Caption Lanes — Place captions by speaker direction" />
+    <meta name="twitter:description" content="Directional live captions for Deaf and hard-of-hearing people in small groups." />
+    <meta name="twitter:image" content="https://speaker-lane-captions.sociobot.in/assets/social-1200x630.webp" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=79e949f8" />
+    <link rel="preload" as="image" href="/assets/room-table-720.webp?v=146d6ff0" type="image/webp" fetchpriority="high" />
+    <script src="/route-state.js"></script>
+    <script type="module" crossorigin src="/assets/app-Ce874ImM.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/styles-sfk0O98_.css">
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to captions</a>
+    <div id="app">
+      <header class="topbar">
+        <a class="brand" href="/" aria-label="Caption Lanes home">
+          <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+          <span>Caption Lanes</span>
+        </a>
+        <nav class="header-nav" aria-label="Main navigation"><a href="/demo">Demo</a><a href="/privacy/">Privacy</a></nav>
+        <div class="top-actions">
+          <span class="privacy-chip"><span aria-hidden="true">●</span> Caption text stays here</span>
+          <button class="icon-button" id="openSettings" type="button" aria-label="Open settings"><span aria-hidden="true">⚙</span></button>
+        </div>
+      </header>
+
+      <aside class="demo-banner" id="demoBanner" aria-label="Demo controls" hidden>
+        <p><strong>Demo — sample data, nothing is saved</strong></p>
+        <div><button class="demo-action" id="resetDemo" type="button">Reset demo</button><button class="demo-action primary" id="startForReal" type="button">Start for real</button></div>
+      </aside>
+
+      <div class="visually-hidden" id="routeAnnouncement" role="status" aria-live="polite"></div>
+      <main id="main" tabindex="-1">
+        <div class="notice global-notice" id="offlineNotice" role="status" hidden><strong>You’re offline.</strong> Use typed captions if live speech is unavailable.</div>
+        <section class="welcome" id="welcome" aria-labelledby="page-title">
+          <div class="hero-art">
+            <picture>
+              <source media="(max-width: 760px)" srcset="/assets/room-table-720.webp?v=146d6ff0" />
+              <img src="/assets/room-table-1280.webp?v=d055c01f" width="1280" height="853" alt="An empty round table lit by separate teal, amber, and coral pools of light" fetchpriority="high" decoding="async" />
+            </picture>
+            <div class="hero-copy">
+              <p class="eyebrow">Directional captions for small groups</p>
+              <h1 id="page-title" tabindex="-1">Place live captions by speaker direction.</h1>
+              <p class="lede">For Deaf and hard-of-hearing people who need to follow small, in-person conversations.</p>
+              <div class="hero-actions"><a class="primary-button button-link" href="/demo">Try it with sample data</a><a class="secondary-button button-link" href="#consent-panel">Start real captions</a></div>
+              <p class="action-note">The demo opens a saved sample conversation. No microphone is used.</p>
+              <ul class="hero-facts">
+                <li><strong>Private:</strong> Raw audio is never saved.</li>
+                <li><strong>Offline:</strong> The installed app opens after one online visit.</li>
+                <li><strong>Price:</strong> Three lanes are free. A fourth costs $24 once.</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="consent-panel" id="consent-panel">
+            <div>
+              <p class="step">Before listening</p>
+              <h2>Ask everyone first.</h2>
+              <p>Caption Lanes uses your microphone only while this screen is open. Raw audio is never saved. On-device speech support is required.</p>
+              <ul class="trust-list">
+                <li><span aria-hidden="true">✓</span> No accounts or cloud archive</li>
+                <li><span aria-hidden="true">✓</span> No voiceprints or identity guesses</li>
+                <li><span aria-hidden="true">✓</span> Coarse direction, with confidence shown</li>
+              </ul>
+            </div>
+            <form id="consentForm">
+              <label class="consent-check"><input id="consent" type="checkbox" required /> <span>Everyone here agrees to live captions.</span></label>
+              <button class="primary-button" type="submit"><span aria-hidden="true">●</span> Start captions</button>
+              <button class="text-button" id="openPractice" type="button">Explore with typed captions</button>
+              <p class="fine-print">A supported browser may ask to install its on-device language pack. Tap a direction whenever the estimate is uncertain.</p>
+            </form>
+          </div>
+
+          <section class="explain-section" id="how-it-works" aria-labelledby="how-title">
+            <p class="step">How it works</p>
+            <h2 id="how-title">How to use Caption Lanes</h2>
+            <ol class="how-list">
+              <li><span>1</span><div><h3>Ask the group</h3><p>Caption Lanes requests microphone access only after everyone agrees.</p></div></li>
+              <li><span>2</span><div><h3>Place the phone</h3><p>Set it near the middle. Stereo microphones estimate left, centre, or right.</p></div></li>
+              <li><span>3</span><div><h3>Read separate lanes</h3><p>Tap a direction when the estimate is uncertain. Export or import caption text in Settings.</p></div></li>
+            </ol>
+          </section>
+
+          <section class="explain-section limits-section" aria-labelledby="limits-title">
+            <p class="step">Privacy and limits</p>
+            <h2 id="limits-title">Know what the app cannot do</h2>
+            <p>Direction is coarse and can be wrong. Caption Lanes does not identify people. Do not use it for emergencies or official records.</p>
+            <ul class="trust-list">
+              <li><span aria-hidden="true">✓</span> Caption text stays in this browser until you clear it.</li>
+              <li><span aria-hidden="true">✓</span> The app uses no account, analytics, or cloud archive.</li>
+              <li><span aria-hidden="true">✓</span> Typed captions remain available without microphone access.</li>
+            </ul>
+          </section>
+
+          <section class="explain-section plus-section" aria-labelledby="plus-title">
+            <div><p class="step">Caption Lanes Plus</p><h2 id="plus-title">Add a fourth lane</h2><p>Plus costs $24 once. It adds an “Across” lane. Typed captions, display controls, confidence filtering, and transcript export stay free.</p></div>
+            <button class="primary-button" id="openUpgradePlan" type="button" aria-label="View Plus details">View Plus details</button>
+          </section>
+        </section>
+
+        <section class="room" id="room" aria-labelledby="room-title" hidden>
+          <div class="room-heading">
+            <div>
+              <p class="eyebrow" id="room-status">Ready · audio stays on this device</p>
+              <h2 id="room-title" tabindex="-1">Conversation</h2>
+            </div>
+            <div class="session-actions">
+              <button class="secondary-button" id="pauseButton" type="button"><span aria-hidden="true">Ⅱ</span> Pause</button>
+              <button class="secondary-button" id="exportButton" type="button">Export transcript</button>
+              <button class="danger-button" id="endButton" type="button">End captions</button>
+            </div>
+          </div>
+
+          <div class="notice warning" id="micNotice" role="alert" hidden></div>
+
+          <nav class="direction-picker" aria-label="Choose current speaker direction">
+            <span>Speaker direction</span>
+            <div id="directionButtons"></div>
+            <p id="directionHelp">Tap when the phone cannot place a voice. Number keys 1–4 also work.</p>
+          </nav>
+
+          <div class="lanes" id="lanes" aria-live="polite" aria-label="Live caption lanes"></div>
+
+          <form class="type-caption" id="typeForm">
+            <label for="typedCaption">Type a caption <span>(backup input)</span></label>
+            <div><input id="typedCaption" autocomplete="off" maxlength="240" placeholder="Type what was said…" /><button class="secondary-button" type="submit">Add to lane</button></div>
+          </form>
+        </section>
+      </main>
+
+      <footer>
+        <p>Directional live captions for small, in-person groups.</p>
+        <nav aria-label="Footer navigation"><a href="/demo">Demo</a><a href="/privacy/">Privacy</a><a href="/terms/">Terms</a><button class="footer-link" id="openUpgrade" type="button">View Caption Lanes Plus</button></nav>
+        <p class="factory-note">Built by Param Factory · v1.0.0 · polish 3</p>
+        <p class="generated-note">Environmental artwork was generated for this product.</p>
+      </footer>
+    </div>
+
+    <dialog id="settingsDialog" aria-labelledby="settings-title">
+      <form method="dialog" class="sheet-head"><div><p class="step">Your view</p><h2 id="settings-title">Caption settings</h2></div><button class="icon-button" aria-label="Close settings">×</button></form>
+      <div class="sheet-body">
+        <label for="captionSize">Caption size <output id="sizeOutput">24 px</output></label>
+        <input id="captionSize" type="range" min="20" max="36" step="2" value="24" />
+        <label class="switch-row"><span><strong>Hide uncertain captions</strong><small>Hides results below 60% recognition confidence.</small></span><input id="hideUncertain" type="checkbox" /></label>
+        <fieldset><legend>Lane appearance</legend><div id="laneSettings"></div></fieldset>
+        <div class="data-actions"><button class="secondary-button" id="importButton" type="button">Import transcript</button><input id="importFile" type="file" accept="application/json" hidden /><button class="danger-button" id="clearButton" type="button">Clear transcript</button></div>
+      </div>
+    </dialog>
+
+    <dialog id="upgradeDialog" aria-labelledby="upgrade-title">
+      <form method="dialog" class="sheet-head"><div><p class="step">One-time purchase</p><h2 id="upgrade-title">Add a fourth caption lane</h2></div><button class="icon-button" aria-label="Close upgrade">×</button></form>
+      <div class="sheet-body upgrade-body">
+        <p class="price">$24 <span>once</span></p>
+        <p>Caption Lanes Plus adds a fourth “Across” lane. Typed captions, display controls, confidence filtering, and transcript export stay free.</p>
+        <a class="primary-button button-link" href="https://api.sociobot.in/api/v1/products/speaker-lane-captions/checkout" target="_blank" rel="noopener">Buy Caption Lanes Plus <span class="visually-hidden">(opens hosted checkout in a new tab)</span></a>
+        <p class="fine-print">Sociobot/Dodo hosts checkout. If checkout is unavailable, keep this dialog open and try again.</p>
+        <form id="restoreForm" class="restore-form"><label for="licenseInput">Have a license? Paste it here.</label><div><input id="licenseInput" type="text" autocomplete="off" spellcheck="false" /><button class="secondary-button" type="submit">Restore license</button></div><p id="licenseStatus" role="status"></p></form>
+        <p><a href="/privacy/">Privacy</a> · <a href="/terms/">Terms</a></p>
+      </div>
+    </dialog>
+
+    <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+  </body>
+</html>
