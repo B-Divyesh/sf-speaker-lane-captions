@@ -91,6 +91,7 @@ describe('static release policy', () => {
     expect(workflow).toContain('android-actions/setup-android@v3');
     expect(workflow).toContain(':app:connectedDebugAndroidTest');
     expect(workflow).toContain('api-level: 31');
+    expect(workflow).toContain('chmod 666 /dev/kvm');
     expect(workflow).toContain('libpulse0');
     expect(workflow).toContain('-no-window');
     expect(workflow).toContain('android-apks-${{ github.sha }}');

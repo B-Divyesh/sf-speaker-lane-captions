@@ -48,6 +48,8 @@ jobs:
             android/app/build/outputs/apk/debug/app-debug.apk
             android/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
             artifacts/android-apk-sha256.txt
+      - name: Enable KVM for the Android emulator
+        run: sudo chmod 666 /dev/kvm
       - name: Install the Android emulator audio library
         run: sudo apt-get update && sudo apt-get install --yes libpulse0
       - name: Run packaged Capacitor bridge on Android 12 emulator
