@@ -151,4 +151,3 @@ No critical, high, medium, or low severity defects were found.
 - `verification-evidence-11/verify-url/`
 - `verification-evidence-11/lighthouse-mobile.json`
 - `verification-evidence-11/lighthouse-mobile-retry.json`
-
